@@ -38,6 +38,10 @@
 
 語境誤譯審查（例：Report 譯成「舉報」）：`node tools/ui-candidates.mjs <官方字串表目錄> i18n/review` 篩出短介面字串（排除官方譯名與稀有物品名，附韓文版當語境），逐批找問題＋對抗驗證，採用的修正寫成 JSON 用 `node tools/apply-fixes.mjs <檔>` 套用（逐條機械檢查）。**驗證者的「統一術語」主張要對照官方字串表**：曾有 Aura→光環、Stamina→耐力 被驗證通過，但官方是靈氣、精力，方向相反。
 
+官方用語對照：`node tools/audit-official.mjs <官方字串表目錄>` 列出「和 D2R 官方同一句英文（%d→# 模板）但譯文不同」的條目；單字型差異多半是語境不同（Gold＝金幣而非詞綴「黃金」），句子型（物品詞條）照官方改，例外見 STYLE.md 的「刻意偏離官方」。
+
+網站頁殘留掃描：`node tools/scan-site.cjs [截圖目錄]` 逐一點排行榜分頁、展開紀錄、進玩家頁，列出畫面上的韓文與沒翻的英文（玩家名稱、品牌名會混進來）。**排行榜頁也載入遊戲的翻譯器與 ui**，所以 import map 在所有頁面都要插，不只 `/play/`（曾因此日期顯示韓文）。
+
 譯文品質：`node tools/audit-terms.mjs` 列出句子裡沒用術語表譯名的地方（Diablo II→暗黑破壞神 II 這類是誤報）；非官方人名用 `tools/fix-names.mjs` 的對照表統一。
 
 ## 發佈（使用者說「發佈」時；`/release` skill）

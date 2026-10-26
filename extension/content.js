@@ -59,12 +59,13 @@ const toZh = (s) => {
   if (D2ZH_SITE_KO[t]) return s.replace(t, D2ZH_SITE_KO[t]);
   // 網站用 Intl 以韓文格式化的日期：10월 25일、2026년 10월 25일
   if (/^(\d+년\s*)?\d+월\s*\d+일$/.test(t)) return s.replace(t, t.replace(/(\d+)년\s*/, '$1年').replace(/(\d+)월\s*/, '$1月').replace(/(\d+)일/, '$1日'));
-  // 「A · B」拼接句：各段分開翻
-  if (t.includes(' · ')) return s.replace(t, t.split(' · ').map(toZh).join(' · '));
+  // 整句模板要在切「 · 」之前比：有些模板本身就含「 · 」（排行榜技能變化統計）
   for (const { re, ids, zh } of TPL) {
     const m = re.exec(t);
     if (m) return s.replace(t, zh.replace(/\{(\d+)\}/g, (_, i) => m[ids.indexOf(i) + 1] ?? _));
   }
+  // 「A · B」拼接句：各段分開翻
+  if (t.includes(' · ')) return s.replace(t, t.split(' · ').map(toZh).join(' · '));
   // 拼接句：長的完整句子先換 → 句中模板 → 短片段（反過來的話短片段會把句子和模板拆爛）
   let v = s;
   const sub = (ko) => { if (v.includes(ko)) v = v.split(ko).join(D2ZH_SITE_KO[ko]); };

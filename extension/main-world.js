@@ -14,14 +14,15 @@
     postMessage({ d2zh: 'missingReply', id: e.data.id, list: [...(globalThis.__d2zhMissing ?? [])] }, location.origin);
   });
   if (!read('d2zh:init')) { write('d2zh:init', '1'); write('d2s:lang', 'ko'); }
-  if (!location.pathname.startsWith('/play/') || read('d2s:lang') !== 'ko') return;
+  if (read('d2s:lang') !== 'ko') return;
   let mods = null;
   try { mods = JSON.parse(read('d2zh:mods')); } catch {}
   if (read('d2zh:off') === '1' || !mods?.['ui-']?.code) {
-    write('d2s:lang', 'en');
-    write('d2zh:pendingKo', '1');
+    // 只有遊戲頁需要退回英文；網站頁（首頁、排行榜）的中文由 content.js 換，不靠補丁
+    if (location.pathname.startsWith('/play/')) { write('d2s:lang', 'en'); write('d2zh:pendingKo', '1'); }
     return;
   }
+  // 所有頁面都換：排行榜頁也載入遊戲的翻譯器與 ui（裝備、技能名稱、日期）
   const imports = {};
   for (const { name, code } of Object.values(mods)) {
     imports[`https://d2survivors.lol/assets/${name}`] = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
