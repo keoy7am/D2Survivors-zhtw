@@ -26,5 +26,5 @@ description: 發佈 D2 Survivors 繁中擴充：打 tag、建 GitHub Release、�
    下載下方的 `d2survivors-zhtw-<版本>.zip`，解壓後依資料夾裡的「安裝說明.html」操作；更新時覆蓋舊資料夾，到 chrome://extensions 按「重新載入」。
    ```
    不寫內部工具、重構、測試等玩家無感的變更。第一版（沒有上一個 tag）改成「## 首次發佈」並簡介功能。
-4. `node tools/release.mjs <版本> <release-notes.md 路徑>`，它會檢查工作區、改 manifest version、打包（zip 內不得有 .md）、commit、tag、push、建 Release。
+4. 先 `node tools/release.mjs --dry-run <版本> <release-notes.md 路徑>`（只檢查＋打包），通過後再去掉 `--dry-run` 正式跑：改 manifest version、打包（zip 內不得有 .md）、commit、tag、push、建 Release。**使用者沒說「發佈」時，只能跑 `--dry-run`。**
 5. 回報使用者：Release 網址、zip 檔名、覆蓋率。
