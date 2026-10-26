@@ -1,7 +1,8 @@
 // 端到端：在 Playwright Chromium 載入擴充，跑三個情境，任一失敗 exit 1
-//   1. 遊戲頁：ui/字典都轉向到擴充、lang=ko、背景記到版本並算出覆蓋率
+//   1. 遊戲頁：字典轉向擴充、ui 跑的是執行期補丁版、lang=ko、覆蓋率已算
 //   2. 首頁：lang=en、data-t 文字換成繁中
-//   3. 模擬遊戲改版（meta.json 的 ui 檔名對不上）：自動停用規則、切回英文、不再載入補丁
+//   3. 模擬遊戲改版（meta.json 記的 ui 是不存在的舊版）：
+//      安裝時補丁失敗→disabled；開遊戲看到真正的新版→自動重打補丁→恢復中文
 // 用法：node tools/e2e.cjs
 const path = require('path');
 const os = require('os');
@@ -17,29 +18,33 @@ async function launch(ext) {
     channel: 'chromium', headless: true, viewport: { width: 1280, height: 800 },
     args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`],
   });
-  const sw = ctx.serviceWorkers()[0] || (await ctx.waitForEvent('serviceworker'));
+  const ours = (w) => w.url().endsWith('/background.js');
+  const sw = ctx.serviceWorkers().find(ours) || (await ctx.waitForEvent('serviceworker', { predicate: ours }));
   return { ctx, sw, page: ctx.pages()[0] || (await ctx.newPage()) };
 }
-const track = (page) => {
-  const reqs = [];
-  page.on('request', (r) => reqs.push(r.url()));
-  return reqs;
-};
+// worker 剛啟動時 chrome.* 可能還沒掛上，查不到就當空狀態，由 waitFor 重試
+const state = (sw) => sw.evaluate(() => chrome.storage.local.get(null)).catch(() => ({}));
 const settle = (page) => page.waitForLoadState('networkidle').then(() => page.waitForTimeout(2500));
+const waitFor = async (fn, ms = 20000) => {
+  for (const end = Date.now() + ms; Date.now() < end; await new Promise((r) => setTimeout(r, 500))) if (await fn()) return true;
+  return false;
+};
+const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true).catch(() => false);
 
 (async () => {
   // 1 + 2
   {
     const { ctx, sw, page } = await launch(EXT);
-    const reqs = track(page);
+    await waitFor(async () => (await state(sw)).patchedUi);
+    const reqs = [];
+    page.on('request', (r) => reqs.push(r.url()));
     await page.goto('https://d2survivors.lol/play/');
     await settle(page);
-    await settle(page); // content.js 可能因狀態同步重新整理一次
     check(await page.evaluate(() => document.documentElement.lang) === 'ko', '遊戲頁 lang=ko');
     check(reqs.some((u) => u.endsWith('/zh-TW.js') && u.startsWith('chrome-extension://')), '字典轉向擴充');
-    check(reqs.some((u) => u.endsWith('/ui.js') && u.startsWith('chrome-extension://')), 'ui 轉向補丁版');
-    const st = await sw.evaluate(() => chrome.storage.local.get(null));
-    check(!!st.seenUi && st.disabled === false, `背景記到版本且未停用（seenUi=${st.seenUi}）`);
+    check(await patched(page), '遊戲跑的是補丁版 ui');
+    const st = await state(sw);
+    check(st.disabled === false && st.patchedUi === st.seenUi, `補丁對上遊戲版本（${st.patchedUi}）`);
     check(st.cov?.total > 10000, `覆蓋率已計算（${st.cov?.covered}/${st.cov?.total}）`);
 
     await page.goto('https://d2survivors.lol/');
@@ -62,18 +67,14 @@ const settle = (page) => page.waitForLoadState('networkidle').then(() => page.wa
     meta.ui = 'ui-OLDVERSION.js';
     fs.writeFileSync(path.join(tmp, 'meta.json'), JSON.stringify(meta));
     const { ctx, sw, page } = await launch(tmp);
-    await page.goto('https://d2survivors.lol/play/');
+    check(await waitFor(async () => (await state(sw)).disabled === true), '補丁打不上時 disabled=true');
+    check((await state(sw)).patchError?.includes('ui-OLDVERSION.js'), '記下補丁失敗原因');
+    await page.goto('https://d2survivors.lol/play/').catch(() => {});
+    check(await waitFor(async () => (await state(sw)).disabled === false), '看到新版 ui 後自動重打補丁、解除 disabled');
     await settle(page);
-    await settle(page);
-    const st = await sw.evaluate(() => chrome.storage.local.get(null));
-    check(st.disabled === true, '改版時 disabled=true');
-    const rs = await sw.evaluate(() => chrome.declarativeNetRequest.getEnabledRulesets());
-    check(rs.length === 0, `轉向規則已停用（${JSON.stringify(rs)}）`);
-    const reqs = track(page);
-    await page.reload();
-    await settle(page);
-    check(await page.evaluate(() => localStorage.getItem('d2s:lang')) === 'en', '改版時切回英文');
-    check(!reqs.some((u) => u.startsWith('chrome-extension://')), '改版時不再載入擴充檔案');
+    await settle(page); // content.js 會重新整理一次
+    check(await patched(page), '重新整理後跑的是新版的補丁');
+    check(await page.evaluate(() => localStorage.getItem('d2s:lang')) === 'ko', '恢復中文（lang=ko）');
     await ctx.close();
   }
   console.log(failed ? `${failed} 項失敗` : '全部通過');

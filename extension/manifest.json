@@ -9,7 +9,7 @@
     "rule_resources": [{ "id": "zh", "enabled": true, "path": "rules.json" }]
   },
   "web_accessible_resources": [
-    { "resources": ["zh-TW.js", "ui.js"], "matches": ["https://d2survivors.lol/*"] }
+    { "resources": ["zh-TW.js"], "matches": ["https://d2survivors.lol/*"] }
   ],
   "background": { "service_worker": "background.js", "type": "module" },
   "content_scripts": [

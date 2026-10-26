@@ -2,19 +2,22 @@ const $ = (id) => document.getElementById(id);
 
 (async () => {
   const meta = await (await fetch('meta.json')).json();
-  const s = await chrome.storage.local.get(['seenUi', 'seenKo', 'off', 'disabled', 'cov']);
+  const s = await chrome.storage.local.get(['seenUi', 'seenKo', 'off', 'disabled', 'cov', 'patchError']);
   $('off').checked = !!s.off;
-  $('state').innerHTML = s.disabled
-    ? '<span class="warn">遊戲已改版，翻譯已自動暫停（不然中文會變成「?」）。請更新本擴充。</span>'
-    : s.off ? '已停用' : '翻譯運作中';
+  if (s.disabled) {
+    $('state').className = 'row warn';
+    $('state').textContent = `遊戲改版後中文渲染補丁打不上，已暫時改回英文，請等擴充更新。（${s.patchError ?? ''}）`;
+  } else {
+    $('state').textContent = s.off ? '已停用' : '翻譯運作中（沒翻到的字串顯示原文）';
+  }
   if (s.cov) {
     const pct = ((s.cov.covered / s.cov.total) * 100).toFixed(1);
     $('cov').textContent = `覆蓋率 ${pct}%（${s.cov.covered} / ${s.cov.total} 條）`;
   } else {
     $('cov').textContent = '覆蓋率：打開一次遊戲後才會計算';
   }
-  const same = (a, b) => (!a || a === b ? '' : ' ← 遊戲目前是 ' + a);
-  $('ver').textContent = `擴充對應版本：${meta.ui}${same(s.seenUi, meta.ui)}；字典 ${meta.ko}${same(s.seenKo, meta.ko)}；建置於 ${meta.builtAt.slice(0, 10)}`;
+  const changed = (s.seenUi && s.seenUi !== meta.ui) || (s.seenKo && s.seenKo !== meta.ko);
+  $('ver').textContent = `遊戲版本 ${s.seenUi ?? '（尚未開過遊戲）'}；譯文建置於 ${meta.builtAt.slice(0, 10)}${changed ? '，之後遊戲有改版，新字串會顯示原文' : ''}`;
 })();
 
 $('off').addEventListener('change', (e) => chrome.storage.local.set({ off: e.target.checked }));

@@ -19,7 +19,10 @@ chrome.storage.local.get(['off', 'disabled'], (s) => {
   if (offNow(s) !== cached) { apply(offNow(s)); location.reload(); }
 });
 chrome.storage.onChanged.addListener((c, area) => {
-  if (area !== 'local' || !('off' in c || 'disabled' in c)) return;
+  if (area !== 'local') return;
+  // 遊戲改版：這一頁載入的是還沒打補丁的新版 ui，補丁規則備妥後重新整理一次
+  if (isGame && c.patchedUi?.newValue) { location.reload(); return; }
+  if (!('off' in c || 'disabled' in c)) return;
   chrome.storage.local.get(['off', 'disabled'], (s) => {
     if (offNow(s) !== cached) { apply(offNow(s)); location.reload(); }
   });

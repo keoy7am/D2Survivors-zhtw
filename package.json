@@ -7,9 +7,10 @@
     "build": "node tools/build.mjs",
     "split": "node tools/split.mjs",
     "merge": "node tools/merge.mjs",
-    "test": "node tools/check.mjs && node tools/patch-ui.mjs && node tools/test-dict-keys.mjs",
+    "prefill": "node tools/prefill-official.mjs",
+    "test": "node tools/check.mjs && node tools/test-patch.mjs && node tools/test-dict-keys.mjs",
     "e2e": "node tools/e2e.cjs",
-    "update": "npm run fetch && npm test && npm run build && npm run split && npm run e2e",
+    "update": "npm run fetch && npm test && npm run prefill && npm run build && npm run split && npm run e2e",
     "pack": "node tools/pack.mjs"
   },
   "devDependencies": {

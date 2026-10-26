@@ -14,21 +14,5 @@
         "script"
       ]
     }
-  },
-  {
-    "id": 2,
-    "priority": 1,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/ui.js"
-      }
-    },
-    "condition": {
-      "regexFilter": "^https://d2survivors\\.lol/assets/ui-BeVrsmtf\\.js$",
-      "resourceTypes": [
-        "script"
-      ]
-    }
   }
 ]
