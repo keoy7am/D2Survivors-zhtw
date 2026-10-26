@@ -39,7 +39,7 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
   // 1 + 2
   {
     const { ctx, sw, page } = await launch(EXT);
-    await waitFor(async () => (await state(sw)).patchedUi);
+    await waitFor(async () => (await state(sw)).patches?.['ui-']);
     const reqs = [];
     page.on('request', (r) => reqs.push(r.url()));
     await page.goto('https://d2survivors.lol/play/');
@@ -48,8 +48,9 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
     check(await page.evaluate(() => document.documentElement.lang) === 'ko', '遊戲頁 lang=ko');
     check(reqs.some((u) => u.endsWith('/zh-TW.js') && u.startsWith('chrome-extension://')), '字典轉向擴充');
     check(await patched(page), '遊戲跑的是補丁版 ui');
+    check(await page.evaluate(() => globalThis.__d2zhTranslatePatched === true), '遊戲跑的是補丁版翻譯器');
     const st = await state(sw);
-    check(st.disabled === false && st.patchedUi === st.seenUi, `補丁對上遊戲版本（${st.patchedUi}）`);
+    check(st.disabled === false && st.patches?.['ui-']?.name === st.seen?.['ui-'], `補丁對上遊戲版本（${st.patches?.['ui-']?.name}）`);
     check(st.cov?.total > 10000, `覆蓋率已計算（${st.cov?.covered}/${st.cov?.total}）`);
 
     await page.goto('https://d2survivors.lol/');
@@ -90,13 +91,13 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'd2zh-ext-'));
     fs.cpSync(EXT, tmp, { recursive: true, filter: (s) => !s.includes('_metadata') });
     const meta = JSON.parse(fs.readFileSync(path.join(tmp, 'meta.json')));
-    meta.ui = 'ui-OLDVERSION.js';
+    meta.files['ui-'] = 'ui-OLDVERSION.js';
     fs.writeFileSync(path.join(tmp, 'meta.json'), JSON.stringify(meta));
     const { ctx, sw, page } = await launch(tmp);
     check(await waitFor(async () => (await state(sw)).patchError?.includes('ui-OLDVERSION.js')), '剛安裝時預打舊版失敗，記下原因');
     check((await state(sw)).disabled === false, '還沒看過遊戲版本，不亮紅色 !（disabled=false）');
     await page.goto('https://d2survivors.lol/play/').catch(() => {});
-    check(await waitFor(async () => (await state(sw)).patchedUi === (await state(sw)).seenUi && !!(await state(sw)).seenUi), '看到新版 ui 後自動打補丁');
+    check(await waitFor(async () => { const st = await state(sw); return !!st.seen?.['ui-'] && st.patches?.['ui-']?.name === st.seen['ui-']; }), '看到新版 ui 後自動打補丁');
     await settle(page);
     await settle(page); // content.js 會重新整理一次
     check(await patched(page), '重新整理後跑的是新版的補丁');
@@ -107,7 +108,7 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
   {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'd2zh-ext-'));
     fs.cpSync(EXT, tmp, { recursive: true, filter: (s) => !s.includes('_metadata') });
-    fs.writeFileSync(path.join(tmp, 'patch-ui.js'), "export function patchUi() { throw new Error('模擬：渲染器變了'); }\n");
+    fs.writeFileSync(path.join(tmp, 'patch-ui.js'), "const f = () => { throw new Error('模擬：渲染器變了'); };\nexport const PATCHERS = { 'ui-': f, 'translate-': f };\n");
     const { ctx, sw, page } = await launch(tmp);
     await page.goto('https://d2survivors.lol/play/').catch(() => {});
     check(await waitFor(async () => (await state(sw)).disabled === true), '已見版本且補丁失敗 → disabled=true');

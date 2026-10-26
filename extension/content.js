@@ -3,32 +3,44 @@
 // main-world.js 拿不到 chrome.*，所以這裡把 background 的狀態與補丁碼同步到頁面 localStorage；
 // 和這一頁開頭用的快取不同時，更新快取並重新整理遊戲頁一次。
 const OFF = 'd2zh:off';
-const UI = 'd2zh:ui'; // {name, code}
+const MODS = 'd2zh:mods'; // {'ui-': {name, code}, 'translate-': {name, code}}
 const PENDING = 'd2zh:pendingKo'; // 使用者選了繁中、但暫時用英文顯示（等補丁碼／暫停中）
 const isGame = location.pathname.startsWith('/play/');
 const read = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const write = (k, v) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} };
+write('d2zh:ui', null); // 舊版的單一模組快取
 
 const cachedOff = read(OFF) === '1';
-let cachedUi = null;
-try { cachedUi = JSON.parse(read(UI)); } catch {}
+const cachedMods = read(MODS);
 
-const sync = () => chrome.storage.local.get(['off', 'disabled', 'patchedUi', 'patchedCode'], (s) => {
+const sync = () => chrome.storage.local.get(['off', 'disabled', 'patches'], (s) => {
   const off = !!(s.off || s.disabled);
-  const ui = s.patchedUi && s.patchedCode ? { name: s.patchedUi, code: s.patchedCode } : null;
+  const mods = s.patches?.['ui-'] ? JSON.stringify(s.patches) : null;
   let reload = false;
   if (off !== cachedOff) { write(OFF, off ? '1' : null); reload = true; }
-  if ((ui?.name ?? null) !== (cachedUi?.name ?? null) || (ui && ui.code !== cachedUi?.code)) {
-    write(UI, ui ? JSON.stringify(ui) : null);
-    reload = true;
-  }
+  if (mods !== cachedMods) { write(MODS, mods); reload = true; }
   // 補丁碼到了且沒停用：把暫時退回的英文還原成使用者選的繁中
-  if (!off && ui && read(PENDING)) { write(PENDING, null); write('d2s:lang', 'ko'); reload = true; }
+  if (!off && mods && read(PENDING)) { write(PENDING, null); write('d2s:lang', 'ko'); reload = true; }
   if (reload && isGame) location.reload();
 });
 sync();
 chrome.storage.onChanged.addListener((c, area) => {
-  if (area === 'local' && ('off' in c || 'disabled' in c || 'patchedUi' in c || 'patchedCode' in c)) sync();
+  if (area === 'local' && ('off' in c || 'disabled' in c || 'patches' in c)) sync();
+});
+
+// popup 要匯出漏翻清單：遊戲執行中查不到翻譯的字串記在頁面（main-world.js 的翻譯器補丁），透過 postMessage 拿
+chrome.runtime.onMessage.addListener((msg, _, reply) => {
+  if (msg !== 'runtimeMissing') return;
+  const id = Math.random().toString(36).slice(2);
+  const on = (e) => {
+    if (e.source !== window || e.data?.d2zh !== 'missingReply' || e.data.id !== id) return;
+    removeEventListener('message', on);
+    reply(e.data.list);
+  };
+  addEventListener('message', on);
+  postMessage({ d2zh: 'missingAsk', id }, location.origin);
+  setTimeout(() => { removeEventListener('message', on); reply([]); }, 1500);
+  return true;
 });
 
 // 網站層文字（選單、頁尾、首頁、排行榜）不經過遊戲字典。網站選「한국어」（＝繁中）時畫面上是韓文，照韓文原文換：

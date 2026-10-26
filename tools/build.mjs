@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { patchUi } from '../extension/patch-ui.js';
+import { PATCHERS } from '../extension/patch-ui.js';
 import { checkEntry } from './check.mjs';
 import { langDicts } from './site-keys.mjs';
 
@@ -19,11 +19,14 @@ const pick = (p) => {
   if (l.length !== 1) throw new Error(`game/ 裡 ${p}*.js 有 ${l.length} 個，先跑 fetch-game.cjs`);
   return l[0];
 };
-const uiFile = pick('ui-');
 const koFile = pick('ko-');
-
-// ui 補丁在擴充執行期打（background.js），這裡只確認對目前版本打得上
-patchUi(fs.readFileSync(path.join(game, uiFile), 'utf8'), uiFile);
+// 補丁在擴充執行期打（background.js），這裡只確認對目前版本打得上
+const files = { 'ko-': koFile };
+for (const [prefix, patch] of Object.entries(PATCHERS)) {
+  files[prefix] = pick(prefix);
+  patch(fs.readFileSync(path.join(game, files[prefix]), 'utf8'), files[prefix]);
+}
+const uiFile = files['ui-'];
 
 const ko = (await import(pathToFileURL(path.join(game, koFile)).href)).default;
 const zh = JSON.parse(fs.readFileSync(path.join(root, 'i18n', 'zh-TW.json'), 'utf8'));
@@ -33,6 +36,14 @@ let stale = 0;
 for (const [k, v] of Object.entries(zh)) {
   if (!(k in ko)) { stale++; continue; } // 舊版才有的字串，留著不刪，改版回來可能又用到
   const err = checkEntry(k, v, ko[k]);
+  if (err) problems.push(`${err}：${k}`);
+  else out[k] = v;
+}
+// 遊戲會顯示、但韓文字典裡沒有的字串（多半來自 D2 原版檔案，例如迷你面板提示），由 popup 的漏翻匯出找到
+const extra = JSON.parse(fs.readFileSync(path.join(root, 'i18n', 'extra.json'), 'utf8'));
+for (const [k, v] of Object.entries(extra)) {
+  if (k in ko) { problems.push(`extra.json 的 key 已在遊戲字典裡，請改放 zh-TW.json：${k}`); continue; }
+  const err = checkEntry(k, v, v);
   if (err) problems.push(`${err}：${k}`);
   else out[k] = v;
 }
@@ -76,6 +87,6 @@ if (siteMissing.size) console.error(`網站層缺譯 ${siteMissing.size} 條（n
 fs.writeFileSync(path.join(ext, 'site-dict.js'), `// 由 tools/build.mjs 從 i18n/site.json 產生：網站的韓文原文 → 繁中（含 {0} 的是模板）\nvar D2ZH_SITE_KO = ${JSON.stringify(siteKo)};\n`);
 
 const total = Object.keys(ko).length;
-const done = Object.keys(out).length;
-fs.writeFileSync(path.join(ext, 'meta.json'), JSON.stringify({ ui: uiFile, ko: koFile, total, translated: done, builtAt: new Date().toISOString() }, null, 2) + '\n');
+const done = Object.keys(out).filter((k) => k in ko).length; // extra.json 不算進覆蓋率
+fs.writeFileSync(path.join(ext, 'meta.json'), JSON.stringify({ files, total, translated: done, builtAt: new Date().toISOString() }, null, 2) + '\n');
 console.log(`ui=${uiFile} ko=${koFile} 覆蓋率 ${done}/${total} = ${(done / total * 100).toFixed(1)}%（舊版殘留 ${stale} 條）`);

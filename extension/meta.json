@@ -1,7 +1,10 @@
 {
-  "ui": "ui-BeVrsmtf.js",
-  "ko": "ko-CPoCS4zR.js",
+  "files": {
+    "ko-": "ko-CPoCS4zR.js",
+    "ui-": "ui-BeVrsmtf.js",
+    "translate-": "translate-DtcjbHwp.js"
+  },
   "total": 12493,
   "translated": 12493,
-  "builtAt": "2026-10-26T13:28:51.836Z"
+  "builtAt": "2026-10-26T13:45:59.157Z"
 }
