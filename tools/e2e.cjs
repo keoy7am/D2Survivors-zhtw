@@ -1,6 +1,6 @@
 // 端到端：在 Playwright Chromium 載入擴充，跑三個情境，任一失敗 exit 1
 //   1. 遊戲頁：字典轉向擴充、ui 跑的是執行期補丁版、lang=ko、覆蓋率已算
-//   2. 首頁：lang=en、data-t 文字換成繁中
+//   2. 首頁：預設繁中、沒有韓文；EN／繁中按鈕切換原文與中文；setup 頁不卡死
 //   3. 模擬遊戲改版（meta.json 記的 ui 是不存在的舊版）：
 //      安裝時預打失敗但不亮紅燈；開遊戲看到真正的新版→自動打補丁→中文
 //   4. 模擬補丁打不上：disabled、退回英文
@@ -54,14 +54,35 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
 
     await page.goto('https://d2survivors.lol/');
     await settle(page);
-    const home = await page.evaluate(() => ({
+    const look = () => page.evaluate(() => ({
       lang: localStorage.getItem('d2s:lang'),
       nav: document.querySelector('[data-t="navBoards"]')?.textContent,
-      hangul: /[가-힣]/.test(document.body.innerText),
+      hangul: /[가-힣]/.test(document.body.innerText + [...document.querySelectorAll('*')].map((e) => getComputedStyle(e, '::before').content).join('')),
     }));
-    check(home.lang === 'en', '首頁 d2s:lang=en');
-    check(home.nav === '排行榜', `首頁選單繁中（${home.nav}）`);
-    check(!home.hangul, '首頁沒有韓文');
+    const home = await look();
+    check(home.lang === 'ko' && home.nav === '排行榜', `首頁預設繁中（${home.lang} ${home.nav}）`);
+    check(!home.hangul, '首頁沒有韓文（FAQ 改顯示英文那份）');
+    await page.click('.lang button[data-lang="en"]');
+    await page.waitForTimeout(1000);
+    const en = await look();
+    check(en.lang === 'en' && en.nav === 'Leaderboards', `按 EN 顯示英文原文（${en.nav}）`);
+    await page.click('.lang button[data-lang="ko"]');
+    await page.waitForTimeout(1000);
+    check((await look()).nav === '排行榜', '按繁中切回中文');
+
+    // setup 頁：網站層翻譯和遊戲的 DOM 翻譯器不能互相改寫（曾經卡死整個分頁）
+    await page.goto('https://d2survivors.lol/play/setup.html').catch(() => {});
+    await settle(page);
+    const busy = await Promise.race([
+      page.evaluate(() => new Promise((res) => {
+        let n = 0;
+        new MutationObserver((l) => { n += l.length; }).observe(document.body, { subtree: true, childList: true, characterData: true });
+        setTimeout(() => res({ n, nav: document.querySelector('[data-t="navBoards"]')?.textContent }), 1000);
+      })),
+      new Promise((res) => setTimeout(() => res(null), 15000)),
+    ]);
+    check(busy && busy.n < 50, `setup 頁沒卡死（1 秒內 DOM 變動 ${busy?.n ?? '逾時'} 次）`);
+    check(busy?.nav === '排行榜', `setup 頁選單繁中（${busy?.nav}）`);
     await ctx.close();
   }
   // 3

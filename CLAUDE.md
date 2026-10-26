@@ -8,8 +8,8 @@
 - 擴充做三件事：
   1. `rules.json`（靜態）：`ko-*.js`（不綁檔名）→ `extension/zh-TW.js`。新版遊戲的新字串不在字典裡，引擎自己顯示原文。
   2. `background.js` **執行期**補丁：看到遊戲載入哪個 `ui-<hash>.js`，就抓那一版原檔，用 `extension/patch-ui.js` 打補丁（CJK 也走 `fillText`、中文字之間可斷行、字型後備加系統繁中字型、相對 import 改絕對網址），補丁碼存進 `chrome.storage.local`。改版後自動重打。
-  3. `content.js`（isolated world）：把背景狀態與補丁碼同步到頁面 localStorage（`d2zh:off`、`d2zh:ui`），不同時重新整理遊戲頁一次；網站層 `[data-t]` 文字用 `i18n/site.json` 換。
-  4. `main-world.js`（MAIN world、document_start）：同步讀 localStorage，設 `d2s:lang`（遊戲頁 ko／其他頁 en；遊戲頁沒補丁碼時先用 en），並插入 import map 把 `ui-<hash>.js` 對應到補丁版的 `blob:` 網址。
+  3. `content.js`（isolated world）：把背景狀態與補丁碼同步到頁面 localStorage（`d2zh:off`、`d2zh:ui`），不同時重新整理遊戲頁一次。網站層文字（選單、首頁、排行榜）照**韓文原文**換成繁中：`site-dict.js` 的 `D2ZH_SITE_KO` 由 build 從網站腳本的 `{en:{…},ko:{…}}` 配對產生（`i18n/site.json` 以英文原文為 key——不同物件有同名 key 代表不同句子，不能用 key 對照）。整句 → 模板（`{0}`）→ 長句子片段 → 句中模板 → 短片段。換過的元素標 `data-no-translate`，否則和遊戲自己的 DOM 翻譯器互相改寫，**整個分頁卡死**（曾發生）。`site.css`：繁中模式顯示英文版 FAQ 段落、繁中字型排在韓文字型前。
+  4. `main-world.js`（MAIN world、document_start）：網站的 EN／繁中（原「한국어」）按鈕就是語言開關（`d2s:lang` en／ko），**不替使用者改選擇**；只有第一次安裝預設繁中、遊戲頁沒補丁碼時暫時退回 en（`d2zh:pendingKo`，補丁碼到了由 content.js 還原）。繁中時插 import map 把 `ui-<hash>.js` 對應到補丁版的 `blob:` 網址。
 - **不要改回 DNR 轉向 `data:`**：正式版 Chrome 156 對被轉向到 `data:` 的 script 回 503，遊戲黑屏（Playwright 的 Chromium 141／151 卻正常，e2e 抓不到）。import map 也必須在 MAIN world 插，isolated world 插的 inline script 會被擴充 CSP 擋。e2e 全綠不等於正式版 Chrome 能用，發佈前要 owner 實測。
 - 每個補丁 regex 必須恰好命中一次。對「遊戲實際載入過的版本」打不上（作者改了渲染器結構）才 `disabled=true`；剛安裝、還沒看過版本時預打失敗不算：停用字典規則、切回英文、badge 紅色 `!`、popup 顯示 `patchError`。不這樣做，中文會整片畫成 `?`。**這是唯一需要改程式的改版情況**；其他改版只需要補翻新字串。
 
@@ -32,7 +32,7 @@
 5. 實機看一眼：`node tools/smoke.cjs https://d2survivors.lol/play/ shot.png`，確認畫面是中文、沒有 `?`、沒有溢出。
 6. commit、push，回報覆蓋率，等 owner 說「發佈」再走下面的發佈流程。**`manifest.json` 的 `version` 由 owner 決定，agent 不要自行調整。**把 `dist/*.zip` 給朋友（解壓覆蓋舊資料夾，到 `chrome://extensions` 按重新載入）。
 
-網站層文字（`i18n/site.json`）：`node tools/site-keys.mjs game/*.js` 列出缺的 key，補翻後重建。
+網站層文字（`i18n/site.json`，英文原文 → 繁中）：`node tools/site-keys.mjs game/*.js` 列出缺譯的英文句子，補翻後重建；build 也會報「網站層缺譯 N 條」。網站新增頁面時，把該頁 URL 加進 `tools/fetch-game.cjs` 才抓得到它的腳本。
 
 譯文品質：`node tools/audit-terms.mjs` 列出句子裡沒用術語表譯名的地方（Diablo II→暗黑破壞神 II 這類是誤報）；非官方人名用 `tools/fix-names.mjs` 的對照表統一。
 

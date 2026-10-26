@@ -22,8 +22,8 @@ const { chromium } = require('playwright');
       saved.push(name);
     } catch {}
   });
-  // 首頁的 landing/site 腳本帶網站層字串（site-keys.mjs 用），遊戲頁的帶 ui/ko
-  for (const u of ['https://d2survivors.lol/', 'https://d2survivors.lol/play/']) {
+  // 首頁、排行榜的腳本帶網站層字串（build／site-keys 用），遊戲頁的帶 ui/ko
+  for (const u of ['https://d2survivors.lol/', 'https://d2survivors.lol/leaderboards/', 'https://d2survivors.lol/play/']) {
     await page.goto(u, { waitUntil: 'networkidle' });
     await page.waitForTimeout(3000);
   }

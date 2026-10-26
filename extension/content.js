@@ -4,6 +4,7 @@
 // 和這一頁開頭用的快取不同時，更新快取並重新整理遊戲頁一次。
 const OFF = 'd2zh:off';
 const UI = 'd2zh:ui'; // {name, code}
+const PENDING = 'd2zh:pendingKo'; // 使用者選了繁中、但暫時用英文顯示（等補丁碼／暫停中）
 const isGame = location.pathname.startsWith('/play/');
 const read = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const write = (k, v) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} };
@@ -12,34 +13,81 @@ const cachedOff = read(OFF) === '1';
 let cachedUi = null;
 try { cachedUi = JSON.parse(read(UI)); } catch {}
 
-// 背景狀態 → 快取；有變就重新整理（變化只在安裝、改版、切換停用時發生，不會連續重整）
 const sync = () => chrome.storage.local.get(['off', 'disabled', 'patchedUi', 'patchedCode'], (s) => {
   const off = !!(s.off || s.disabled);
-  const ui = !off && s.patchedUi && s.patchedCode ? { name: s.patchedUi, code: s.patchedCode } : null;
-  const changed = off !== cachedOff || (ui?.name ?? null) !== (cachedUi?.name ?? null) || (ui && ui.code !== cachedUi?.code);
-  if (!changed) return;
-  write(OFF, off ? '1' : null);
-  write(UI, ui ? JSON.stringify(ui) : null);
-  if (isGame) location.reload();
+  const ui = s.patchedUi && s.patchedCode ? { name: s.patchedUi, code: s.patchedCode } : null;
+  let reload = false;
+  if (off !== cachedOff) { write(OFF, off ? '1' : null); reload = true; }
+  if ((ui?.name ?? null) !== (cachedUi?.name ?? null) || (ui && ui.code !== cachedUi?.code)) {
+    write(UI, ui ? JSON.stringify(ui) : null);
+    reload = true;
+  }
+  // 補丁碼到了且沒停用：把暫時退回的英文還原成使用者選的繁中
+  if (!off && ui && read(PENDING)) { write(PENDING, null); write('d2s:lang', 'ko'); reload = true; }
+  if (reload && isGame) location.reload();
 });
 sync();
 chrome.storage.onChanged.addListener((c, area) => {
   if (area === 'local' && ('off' in c || 'disabled' in c || 'patchedUi' in c || 'patchedCode' in c)) sync();
 });
 
-// 網站層（選單、頁尾、首頁）的 data-t 文字不經過遊戲字典，自己換
-const translate = () => {
-  if (cachedOff) return;
-  for (const el of document.querySelectorAll('[data-t]')) {
-    const zh = D2ZH_SITE[el.dataset.t];
-    if (zh && el.textContent !== zh) el.textContent = zh;
+// 網站層文字（選單、頁尾、首頁、排行榜）不經過遊戲字典。網站選「한국어」（＝繁中）時畫面上是韓文，照韓文原文換：
+// 整句吻合 → 模板（含 {0} 的句子，數字等部分照抄）→ 句中片段（「Linux (베타)」這種拼接字）。
+const KO = Object.keys(D2ZH_SITE_KO).filter((k) => !/\{\d+\}/.test(k)).sort((a, b) => b.length - a.length);
+const TPL = Object.keys(D2ZH_SITE_KO).filter((k) => /\{\d+\}/.test(k)).map((k) => {
+  const ids = [];
+  const body = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`^${body.replace(/\\\{(\d+)\\\}/g, (_, i) => { ids.push(i); return '(.+?)'; })}$`, 's');
+  // 句中版：模板只是整段文字的一部分時（「模板句 另一句」），佔位符只吃不含空白的片段（多半是數字）
+  const inner = new RegExp(body.replace(/\\\{(\d+)\\\}/g, '(\\S+?)'), 'g');
+  return { re, inner, ids, zh: D2ZH_SITE_KO[k], fixed: k.replace(/\{\d+\}/g, '').length };
+}).sort((a, b) => b.fixed - a.fixed); // 固定文字多的先比，避免「{0}명」這種短模板搶先
+const toZh = (s) => {
+  const t = s.trim();
+  if (D2ZH_SITE_KO[t]) return s.replace(t, D2ZH_SITE_KO[t]);
+  // 網站用 Intl 以韓文格式化的日期：10월 25일、2026년 10월 25일
+  if (/^(\d+년\s*)?\d+월\s*\d+일$/.test(t)) return s.replace(t, t.replace(/(\d+)년\s*/, '$1年').replace(/(\d+)월\s*/, '$1月').replace(/(\d+)일/, '$1日'));
+  // 「A · B」拼接句：各段分開翻
+  if (t.includes(' · ')) return s.replace(t, t.split(' · ').map(toZh).join(' · '));
+  for (const { re, ids, zh } of TPL) {
+    const m = re.exec(t);
+    if (m) return s.replace(t, zh.replace(/\{(\d+)\}/g, (_, i) => m[ids.indexOf(i) + 1] ?? _));
   }
+  // 拼接句：長的完整句子先換 → 句中模板 → 短片段（反過來的話短片段會把句子和模板拆爛）
+  let v = s;
+  const sub = (ko) => { if (v.includes(ko)) v = v.split(ko).join(D2ZH_SITE_KO[ko]); };
+  KO.filter((k) => k.length >= 15).forEach(sub);
+  for (const { inner, ids, zh } of TPL) v = v.replace(inner, (...m) => zh.replace(/\{(\d+)\}/g, (_, i) => m[ids.indexOf(i) + 1] ?? _));
+  KO.filter((k) => k.length < 15).forEach(sub);
+  return v;
+};
+const HANGUL = /[가-힣]/;
+// 換過的元素標上 data-no-translate：遊戲自己的 DOM 翻譯器會跳過它，否則兩邊的 MutationObserver 會互相改寫到頁面卡死
+const fix = (n) => {
+  const el = n.parentElement;
+  if (!el || el.closest('.lang, [data-in="ko"], script, style')) return;
+  const v = toZh(n.nodeValue);
+  if (v === n.nodeValue) return;
+  if (!el.hasAttribute('data-no-translate')) el.setAttribute('data-no-translate', '');
+  n.nodeValue = v;
+};
+const translate = () => {
+  if (cachedOff || read('d2s:lang') !== 'ko') return;
+  // 遊戲頁 DOM 很大又一直在變，只處理網站外框的 data-t；網站頁掃全頁
+  const roots = isGame ? document.querySelectorAll('[data-t]') : [document.body];
+  for (const r of roots) {
+    const w = document.createTreeWalker(r, NodeFilter.SHOW_TEXT);
+    while (w.nextNode()) if (HANGUL.test(w.currentNode.nodeValue)) fix(w.currentNode);
+  }
+};
+const relabel = () => {
   for (const b of document.querySelectorAll('.lang button[data-lang="ko"]')) {
-    if (b.textContent !== '繁中') { b.textContent = '繁中'; b.setAttribute('aria-label', '繁體中文'); }
+    if (b.textContent !== '繁中') { b.textContent = '繁中'; b.setAttribute('aria-label', '繁體中文'); b.setAttribute('data-no-translate', ''); }
   }
 };
 const start = () => {
-  translate();
-  new MutationObserver(translate).observe(document.body, { subtree: true, childList: true, characterData: true });
+  const all = () => { relabel(); translate(); };
+  all();
+  new MutationObserver(all).observe(document.body, { subtree: true, childList: true, characterData: true });
 };
 document.body ? start() : document.addEventListener('DOMContentLoaded', start, { once: true });

@@ -1,0 +1,15 @@
+/* 網站的「한국어」模式＝本擴充的繁中模式 */
+
+/* FAQ 等段落網站只有英／韓兩份：繁中模式改顯示英文那份，不顯示韓文
+   （網站規則 :root:lang(ko) [data-in=en]{display:none!important}，這裡用更高權重蓋回） */
+:root:root:lang(ko) [data-in="en"][data-in] { display: revert !important; }
+:root:root:lang(ko) [data-in="ko"][data-in] { display: none !important; }
+
+/* 首頁「或下載其他版本」前的韓文字由 CSS 偽元素產生（網站規則 content:"또는 "） */
+:root:root:lang(ko) .cta-others::before { content: "或 "; }
+
+/* 字型：網站在韓文模式用韓文字型，中文會變成韓式字形；把繁中字型排在韓文字型前面 */
+:root:root:lang(ko) {
+  --title-font: "Metamorphous", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", serif;
+  --text-font: "EB Garamond", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", serif;
+}

@@ -9,6 +9,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { patchUi } from '../extension/patch-ui.js';
 import { checkEntry } from './check.mjs';
+import { langDicts } from './site-keys.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const game = path.join(root, 'game');
@@ -51,8 +52,28 @@ const rules = [{
 }];
 fs.writeFileSync(path.join(ext, 'rules.json'), JSON.stringify(rules, null, 2) + '\n');
 
+// 網站層：網站選「한국어」時畫面上是韓文，照韓文原文換成繁中。
+// i18n/site.json 是 {英文原文: 繁中}；網站腳本的 {en:{…},ko:{…}} 物件依出現順序、同 key 配對出 韓文 → 英文 → 繁中。
+// （不用 key 當對照：不同物件有同名 key 代表不同句子）
 const site = JSON.parse(fs.readFileSync(path.join(root, 'i18n', 'site.json'), 'utf8'));
-fs.writeFileSync(path.join(ext, 'site-dict.js'), `// 由 tools/build.mjs 從 i18n/site.json 產生\nvar D2ZH_SITE = ${JSON.stringify(site)};\n`);
+const siteKo = {};
+const siteMissing = new Set();
+for (const f of fs.readdirSync(game).filter((n) => n.endsWith('.js') && !/^ko-/.test(n))) {
+  const s = fs.readFileSync(path.join(game, f), 'utf8');
+  const ens = langDicts(s, 'en');
+  const kos = langDicts(s, 'ko');
+  if (ens.length !== kos.length) throw new Error(`${f}：en 物件 ${ens.length} 個、ko 物件 ${kos.length} 個，無法配對`);
+  ens.forEach((en, i) => {
+    for (const [k, enText] of Object.entries(en)) {
+      const koText = kos[i][k];
+      if (!koText) continue;
+      if (site[enText]) siteKo[koText] = site[enText];
+      else siteMissing.add(enText);
+    }
+  });
+}
+if (siteMissing.size) console.error(`網站層缺譯 ${siteMissing.size} 條（node tools/site-keys.mjs game/*.js 列出）`);
+fs.writeFileSync(path.join(ext, 'site-dict.js'), `// 由 tools/build.mjs 從 i18n/site.json 產生：網站的韓文原文 → 繁中（含 {0} 的是模板）\nvar D2ZH_SITE_KO = ${JSON.stringify(siteKo)};\n`);
 
 const total = Object.keys(ko).length;
 const done = Object.keys(out).length;
