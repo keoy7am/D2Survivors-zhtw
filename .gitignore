@@ -1,0 +1,7 @@
+.claude/
+node_modules/
+dist/
+game/
+i18n/todo/
+i18n/done/
+extension/_metadata/

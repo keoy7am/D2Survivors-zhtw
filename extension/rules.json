@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/zh-TW.js"
+      }
+    },
+    "condition": {
+      "regexFilter": "^https://d2survivors\\.lol/assets/ko-CPoCS4zR\\.js$",
+      "resourceTypes": [
+        "script"
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/ui.js"
+      }
+    },
+    "condition": {
+      "regexFilter": "^https://d2survivors\\.lol/assets/ui-BeVrsmtf\\.js$",
+      "resourceTypes": [
+        "script"
+      ]
+    }
+  }
+]
