@@ -15,6 +15,8 @@
 
 ## 風格
 - 術語以 `i18n/glossary.json` 為準（有就照用）；沒有的名詞以《暗黑破壞神 II：獄火重生》官方繁中為準，不確定時取台灣玩家常用譯名。
+- **官方譯名優先於直覺**：Aura＝靈氣（不是光環）、Stamina＝精力、Energy＝能量、Vitality＝體能。審查時覺得「光環比較通順」也不要改，玩家對照的是官方版。
+- 介面按鈕看語境，不要照字面：REPORT＝回報問題（錯誤回報，不是舉報）；Build 後面接版本號時＝版本，指角色時＝流派／配置；手把按鍵 Cross／Circle／Square／Triangle＝叉鍵／圈鍵／方塊鍵／三角鍵。
 - 職業：Amazon 亞馬遜、Assassin 刺客、Barbarian 野蠻人、Druid 德魯伊、Necromancer 死靈法師、Paladin 聖騎士、Sorceress 魔法使。
 - Diablo II → 暗黑破壞神 II；D2R、D2 Survivors、Ko-fi、Discord、Steam 等專有名詞照留英文。
 - 按鍵與縮寫保留原樣：`(T)`、`Esc`、`Shift`、`Ctrl`、`DPS`、`MF`、`XP`。數字、`%`、`+`、`×` 原樣保留。
