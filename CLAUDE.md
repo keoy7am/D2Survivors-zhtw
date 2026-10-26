@@ -32,6 +32,13 @@
 
 網站層文字（`i18n/site.json`）：`node tools/site-keys.mjs game/*.js` 列出缺的 key，補翻後重建。
 
+譯文品質：`node tools/audit-terms.mjs` 列出句子裡沒用術語表譯名的地方（Diablo II→暗黑破壞神 II 這類是誤報）；非官方人名用 `tools/fix-names.mjs` 的對照表統一。
+
+## 發佈（使用者說「發佈」時；`/release` skill）
+- 使用者說「發佈」就是授權建 tag、推送、建 GitHub Release，照 `.claude/skills/release/SKILL.md` 做：測試全過 → 撰寫玩家看得懂的改版內容 → `node tools/release.mjs <版本> <改版內容檔>`。
+- 發佈檔（`npm run pack`）：`d2survivors-zhtw/` 資料夾＝擴充檔案＋`安裝說明.html`（來源 `docs/install.html`）。**不得含 `.md`**，pack 會擋。zip 由 Node 自己寫（UTF-8 檔名、斜線路徑），不用系統壓縮工具。
+- 驗證發佈檔：解壓後 `EXT=<解壓資料夾>/d2survivors-zhtw node tools/e2e.cjs`。
+
 ## 慣例
 - 用 `npm run …`，不用全域 playwright。測試腳本會開 headless Chromium 連正式站。
 - commit 訊息寫做了什麼和為什麼，不寫工作過程。

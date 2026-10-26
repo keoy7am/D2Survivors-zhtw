@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>D2 Survivors 繁中安裝說明</title>
+<style>
+  :root {
+    --bg: #14110d; --panel: #1f1a14; --line: #4a3c28; --text: #e6dcc4; --dim: #a39880;
+    --gold: #c9a24f; --red: #e06c50; --green: #6fbf73; --code: #2b241a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.75 "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { color: var(--gold); font-size: 28px; margin: 0 0 4px; letter-spacing: .04em; }
+  .sub { color: var(--dim); margin: 0 0 32px; }
+  h2 { color: var(--gold); font-size: 19px; margin: 36px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  ol, ul { padding-left: 1.4em; }
+  li { margin: 6px 0; }
+  code { background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; font-family: Consolas, monospace; font-size: .92em; }
+  a { color: var(--gold); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px 20px; }
+  .badge { display: inline-block; min-width: 2.4em; text-align: center; border-radius: 4px; padding: 0 6px; font-weight: bold; color: #fff; font-size: 13px; }
+  .g { background: #2e7d32; } .r { background: #c62828; } .o { background: #757575; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td:first-child { width: 72px; }
+  .note { color: var(--dim); font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>D2 Survivors 繁體中文</h1>
+  <p class="sub">非官方 Chrome 擴充，把 d2survivors.lol 的遊戲翻成繁體中文。</p>
+
+  <h2>安裝</h2>
+  <div class="card">
+    <ol>
+      <li>把這個資料夾（<code>d2survivors-zhtw</code>）放在不會被刪掉的地方。</li>
+      <li>Chrome 網址列輸入 <code>chrome://extensions</code>，打開右上角的「開發人員模式」。</li>
+      <li>按「載入未封裝項目」，選擇 <code>d2survivors-zhtw</code> 資料夾。</li>
+      <li>打開 <a href="https://d2survivors.lol/play/">d2survivors.lol/play</a>，遊戲就是中文了。</li>
+    </ol>
+    <p class="note">Edge 也能用：網址改成 <code>edge://extensions</code>，步驟相同。</p>
+  </div>
+
+  <h2>圖示上的標記</h2>
+  <table>
+    <tr><td><span class="badge g">97</span></td><td>正常運作，數字是翻譯覆蓋率（%）。</td></tr>
+    <tr><td><span class="badge o">off</span></td><td>你暫時停用了（按擴充圖示可以切換）。</td></tr>
+    <tr><td><span class="badge r">!</span></td><td>遊戲大改版，中文顯示機制暫時失效，已自動改回英文，請等新版擴充。</td></tr>
+  </table>
+  <p class="note">遊戲一般改版時擴充會自動適應：翻譯照常，新加的內容先顯示英文，覆蓋率會稍微下降。</p>
+
+  <h2>更新到新版</h2>
+  <ol>
+    <li>下載新版 zip，解壓後<strong>覆蓋</strong>舊的 <code>d2survivors-zhtw</code> 資料夾。</li>
+    <li>到 <code>chrome://extensions</code>，在這個擴充上按「重新載入」（圓形箭頭）。</li>
+  </ol>
+
+  <h2>常見問題</h2>
+  <ul>
+    <li><strong>想看英文原版？</strong>按擴充圖示，勾「暫時停用」。</li>
+    <li><strong>遊戲設定裡的語言顯示「한국어」？</strong>那個選項就是繁中，擴充借用了遊戲的韓文語系欄位。</li>
+    <li><strong>桌面版（exe）能用嗎？</strong>不行，只支援瀏覽器版。</li>
+    <li><strong>看到沒翻到或翻錯的字？</strong>按擴充圖示的「匯出漏翻清單」，把檔案傳給維護者。</li>
+  </ul>
+
+  <p class="note" style="margin-top:40px">本擴充為非官方粉絲製作，與遊戲作者 framara 及 Blizzard Entertainment 無關。</p>
+</main>
+</body>
+</html>

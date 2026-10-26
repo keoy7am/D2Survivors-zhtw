@@ -9,7 +9,8 @@ const os = require('os');
 const fs = require('fs');
 const { chromium } = require('playwright');
 
-const EXT = path.resolve(__dirname, '..', 'extension');
+// EXT=<資料夾> 可改測解壓後的發佈檔
+const EXT = process.env.EXT || path.resolve(__dirname, '..', 'extension');
 let failed = 0;
 const check = (ok, msg) => { console.log(`${ok ? 'PASS' : 'FAIL'} ${msg}`); if (!ok) failed++; };
 
