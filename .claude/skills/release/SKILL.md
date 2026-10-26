@@ -27,4 +27,5 @@ description: 發佈 D2 Survivors 繁中擴充：打 tag、建 GitHub Release、�
    ```
    不寫內部工具、重構、測試等玩家無感的變更。第一版（沒有上一個 tag）改成「## 首次發佈」並簡介功能。
 4. 先 `node tools/release.mjs --dry-run <版本> <release-notes.md 路徑>`（只檢查＋打包），通過後再去掉 `--dry-run` 正式跑：改 manifest version、打包（zip 內不得有 .md）、commit、tag、push、建 Release。**使用者沒說「發佈」時，只能跑 `--dry-run`。**
-5. 回報使用者：Release 網址、zip 檔名、覆蓋率。
+   - 若最後 `gh release create` 失敗（網路、權限），tag 已經推上去了，重跑腳本會被「tag 已存在」擋下。手動補建：`gh release create v<版本> dist/d2survivors-zhtw-<版本>.zip --title "D2 Survivors 繁中 v<版本>" --notes-file <release-notes.md>`。
+5. 回報使用者：Release 網址、zip 檔名、覆蓋率。提醒：repo 是 private，Release 頁只有 owner 與 collaborator 看得到，給朋友要直接傳 zip。

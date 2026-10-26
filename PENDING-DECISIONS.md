@@ -1,0 +1,9 @@
+# PENDING-DECISIONS
+
+日期 | 問題 | 暫行方案 | 影響範圍
+---|---|---|---
+2026-10-26 | 遊戲自創詞的譯名要不要改：Terror tier→邪惡威脅層級、Horadric Codex→赫拉迪姆寶典、Run→一局、Build（角色）→流派、Draft→選卡、Reroll→重抽、Banish→放逐、Skill modifier→技能變化、Evolve→進化、Magic Find→魔法物品尋獲率、Treasure Thief→寶藏竊賊 | 照左列使用 | 全遊戲；改名用 `tools/fix-names.mjs` 加對照即可
+2026-10-26 | 官方譯名與玩家習慣不同時是否沿用官方：Sorceress 魔法使、Andariel 安達莉爾、Duriel 都瑞爾 | 沿用 D2R 台灣官方 | 全遊戲
+2026-10-26 | 隨機稀有物品名（約 2,000 條「前綴＋底材」組字，如 Bitter Flange）由術語表機械拼接，部分讀起來生硬 | 保留；玩起來覺得怪再挑重翻 | 稀有物品名稱
+2026-10-26 | 網站說「託管檔案」即將下架，之後自動測試（e2e、tour）進不了遊戲，需改用 owner 自己的 D2 檔案或改測法 | 目前仍可用託管檔案 | tools/e2e.cjs、tools/tour.cjs
+2026-10-26 | owner 實測：物品名稱組字順序（魔法物品「後綴 前綴 底材」）與物品說明框、商店介面——自動截圖只看過主選單、選角、升級卡片 | 待 owner 玩一局：撿到魔法物品後按 Alt 看名稱、按 I 開物品欄看說明、回營地開恰西／基得商店 | 物品、商店 UI

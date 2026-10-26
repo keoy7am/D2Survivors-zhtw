@@ -2,7 +2,8 @@
 //   1. 遊戲頁：字典轉向擴充、ui 跑的是執行期補丁版、lang=ko、覆蓋率已算
 //   2. 首頁：lang=en、data-t 文字換成繁中
 //   3. 模擬遊戲改版（meta.json 記的 ui 是不存在的舊版）：
-//      安裝時補丁失敗→disabled；開遊戲看到真正的新版→自動重打補丁→恢復中文
+//      安裝時預打失敗但不亮紅燈；開遊戲看到真正的新版→自動打補丁→中文
+//   4. 模擬補丁打不上：disabled、退回英文
 // 用法：node tools/e2e.cjs
 const path = require('path');
 const os = require('os');
@@ -68,14 +69,33 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
     meta.ui = 'ui-OLDVERSION.js';
     fs.writeFileSync(path.join(tmp, 'meta.json'), JSON.stringify(meta));
     const { ctx, sw, page } = await launch(tmp);
-    check(await waitFor(async () => (await state(sw)).disabled === true), '補丁打不上時 disabled=true');
-    check((await state(sw)).patchError?.includes('ui-OLDVERSION.js'), '記下補丁失敗原因');
+    check(await waitFor(async () => (await state(sw)).patchError?.includes('ui-OLDVERSION.js')), '剛安裝時預打舊版失敗，記下原因');
+    check((await state(sw)).disabled === false, '還沒看過遊戲版本，不亮紅色 !（disabled=false）');
     await page.goto('https://d2survivors.lol/play/').catch(() => {});
-    check(await waitFor(async () => (await state(sw)).disabled === false), '看到新版 ui 後自動重打補丁、解除 disabled');
+    check(await waitFor(async () => (await state(sw)).patchedUi === (await state(sw)).seenUi && !!(await state(sw)).seenUi), '看到新版 ui 後自動打補丁');
     await settle(page);
     await settle(page); // content.js 會重新整理一次
     check(await patched(page), '重新整理後跑的是新版的補丁');
-    check(await page.evaluate(() => localStorage.getItem('d2s:lang')) === 'ko', '恢復中文（lang=ko）');
+    check(await page.evaluate(() => localStorage.getItem('d2s:lang')) === 'ko', '中文（lang=ko）');
+    await ctx.close();
+  }
+  // 4. 補丁打不上（模擬作者改了渲染器）：退回英文、不載入字典
+  {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'd2zh-ext-'));
+    fs.cpSync(EXT, tmp, { recursive: true, filter: (s) => !s.includes('_metadata') });
+    fs.writeFileSync(path.join(tmp, 'patch-ui.js'), "export function patchUi() { throw new Error('模擬：渲染器變了'); }\n");
+    const { ctx, sw, page } = await launch(tmp);
+    await page.goto('https://d2survivors.lol/play/').catch(() => {});
+    check(await waitFor(async () => (await state(sw)).disabled === true), '已見版本且補丁失敗 → disabled=true');
+    await settle(page);
+    await settle(page);
+    const reqs = [];
+    page.on('request', (r) => reqs.push(r.url()));
+    await page.reload();
+    await settle(page);
+    check(await page.evaluate(() => localStorage.getItem('d2s:lang')) === 'en', '退回英文');
+    check(!reqs.some((u) => u.startsWith('chrome-extension://')), '不再載入擴充字典');
+    check(!(await patched(page)), '沒有補丁版 ui');
     await ctx.close();
   }
   console.log(failed ? `${failed} 項失敗` : '全部通過');

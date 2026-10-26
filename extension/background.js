@@ -58,7 +58,10 @@ const refresh = () => (running = running.then(refreshNow, refreshNow)); // 串�
 async function refreshNow() {
   const m = await meta;
   const s = await chrome.storage.local.get(['seenUi', 'seenKo', 'off', 'cov']);
-  const disabled = !(await ensurePatched(s.seenUi ?? m.ui));
+  // 還沒看過遊戲載入哪一版時（剛安裝），先對建置時的版本預打；失敗不算 disabled——
+  // 遊戲可能已經換版，等真的看到版本再判斷，不要讓剛裝好的人看到紅色「!」
+  const ok = await ensurePatched(s.seenUi ?? m.ui);
+  const disabled = !ok && !!s.seenUi;
   await chrome.declarativeNetRequest.updateEnabledRulesets(!disabled && !s.off ? { enableRulesetIds: ['zh'] } : { disableRulesetIds: ['zh'] });
   await chrome.storage.local.set({ disabled });
   let cov = s.cov;
