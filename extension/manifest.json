@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "D2 Survivors 繁體中文",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "把 d2survivors.lol 的遊戲翻成繁體中文（非官方）",
   "permissions": [
     "declarativeNetRequest",
