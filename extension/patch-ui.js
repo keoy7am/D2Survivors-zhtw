@@ -23,7 +23,7 @@ export function patchUi(src, fileName) {
     return s.replace(re, to);
   };
   let s = src;
-  // 1. 補丁版從 data: 網址載入，相對 import 會失效，改成絕對網址
+  // 1. 補丁版從 blob: 網址載入（content.js 的 import map），相對 import 會失效，改成絕對網址
   if (!/from"\.\//.test(s)) throw new Error('找不到相對 import，檔案結構變了');
   s = s.replace(/from"\.\//g, `from"${ORIGIN}`);
   if (/import\(/.test(s)) throw new Error('出現動態 import()，需要一併改寫成絕對網址');

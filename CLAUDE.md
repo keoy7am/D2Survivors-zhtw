@@ -7,8 +7,10 @@
 - 遊戲文字畫在 canvas 上，用 D2 點陣字；原版只有諺文走 `fillText`，其他 >255 的字元畫成 `?`。
 - 擴充做三件事：
   1. `rules.json`（靜態）：`ko-*.js`（不綁檔名）→ `extension/zh-TW.js`。新版遊戲的新字串不在字典裡，引擎自己顯示原文。
-  2. `background.js` **執行期**補丁：看到遊戲載入哪個 `ui-<hash>.js`，就抓那一版原檔，用 `extension/patch-ui.js` 打補丁（CJK 也走 `fillText`、中文字之間可斷行、字型後備加系統繁中字型、相對 import 改絕對網址），以動態規則把那個精確檔名轉向成 `data:` 網址。改版後自動重打，content.js 會在補丁備妥時重新整理遊戲頁一次。
-  3. `content.js`：遊戲頁設 `d2s:lang=ko`、其他頁設 `en`；網站層 `[data-t]` 文字用 `i18n/site.json` 換。
+  2. `background.js` **執行期**補丁：看到遊戲載入哪個 `ui-<hash>.js`，就抓那一版原檔，用 `extension/patch-ui.js` 打補丁（CJK 也走 `fillText`、中文字之間可斷行、字型後備加系統繁中字型、相對 import 改絕對網址），補丁碼存進 `chrome.storage.local`。改版後自動重打。
+  3. `content.js`（isolated world）：把背景狀態與補丁碼同步到頁面 localStorage（`d2zh:off`、`d2zh:ui`），不同時重新整理遊戲頁一次；網站層 `[data-t]` 文字用 `i18n/site.json` 換。
+  4. `main-world.js`（MAIN world、document_start）：同步讀 localStorage，設 `d2s:lang`（遊戲頁 ko／其他頁 en；遊戲頁沒補丁碼時先用 en），並插入 import map 把 `ui-<hash>.js` 對應到補丁版的 `blob:` 網址。
+- **不要改回 DNR 轉向 `data:`**：正式版 Chrome 156 對被轉向到 `data:` 的 script 回 503，遊戲黑屏（Playwright 的 Chromium 141／151 卻正常，e2e 抓不到）。import map 也必須在 MAIN world 插，isolated world 插的 inline script 會被擴充 CSP 擋。e2e 全綠不等於正式版 Chrome 能用，發佈前要 owner 實測。
 - 每個補丁 regex 必須恰好命中一次。對「遊戲實際載入過的版本」打不上（作者改了渲染器結構）才 `disabled=true`；剛安裝、還沒看過版本時預打失敗不算：停用字典規則、切回英文、badge 紅色 `!`、popup 顯示 `patchError`。不這樣做，中文會整片畫成 `?`。**這是唯一需要改程式的改版情況**；其他改版只需要補翻新字串。
 
 ## 檔案

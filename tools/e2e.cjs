@@ -17,7 +17,9 @@ const check = (ok, msg) => { console.log(`${ok ? 'PASS' : 'FAIL'} ${msg}`); if (
 
 async function launch(ext) {
   const ctx = await chromium.launchPersistentContext(fs.mkdtempSync(path.join(os.tmpdir(), 'd2zh-')), {
-    channel: 'chromium', headless: true, viewport: { width: 1280, height: 800 },
+    // CHROMIUM=<chrome.exe> 可換較新的 Chromium（Playwright 內建版落後正式版 Chrome，行為可能不同）
+    ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : { channel: 'chromium' }),
+    headless: true, viewport: { width: 1280, height: 800 },
     args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`],
   });
   const ours = (w) => w.url().endsWith('/background.js');
@@ -42,6 +44,7 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
     page.on('request', (r) => reqs.push(r.url()));
     await page.goto('https://d2survivors.lol/play/');
     await settle(page);
+    await settle(page); // 第一次進來先快取補丁碼、重新整理一次
     check(await page.evaluate(() => document.documentElement.lang) === 'ko', '遊戲頁 lang=ko');
     check(reqs.some((u) => u.endsWith('/zh-TW.js') && u.startsWith('chrome-extension://')), '字典轉向擴充');
     check(await patched(page), '遊戲跑的是補丁版 ui');

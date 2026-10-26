@@ -1,6 +1,6 @@
 // 執行期補丁＋覆蓋率。
 // - 遊戲載入哪一版 ui-<hash>.js，就抓那一版原檔打中文渲染補丁（patch-ui.js），
-//   用動態規則把那個精確檔名轉向成 data: 網址。遊戲改版後自動重打，翻譯照常運作；
+//   補丁碼存進 storage，content.js 用 import map 換上。遊戲改版後自動重打，翻譯照常運作；
 //   新字串不在字典裡，遊戲引擎本來就會顯示原文。
 // - 只有補丁打不上（作者改了渲染器結構）才 disabled：停用字典規則、切回英文，
 //   不然中文會被畫成「?」。
@@ -10,9 +10,8 @@ import { dictKeys } from './dict-keys.js';
 import { patchUi } from './patch-ui.js';
 
 const ORIGIN = 'https://d2survivors.lol/assets/';
-const UI_RULE = 100;
+const OLD_UI_RULE = 100;
 const meta = fetch(chrome.runtime.getURL('meta.json')).then((r) => r.json());
-const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 async function fetchText(url) {
   const r = await fetch(url);
@@ -20,28 +19,18 @@ async function fetchText(url) {
   return r.text();
 }
 
-// 確保「這一版 ui」有補丁規則；回傳是否成功
+// 確保「這一版 ui」的補丁碼在 storage 裡（content.js 用 import map 換上它）；回傳是否成功
 async function ensurePatched(uiName) {
-  const { patchedUi } = await chrome.storage.local.get('patchedUi');
-  const rules = await chrome.declarativeNetRequest.getDynamicRules();
-  if (patchedUi === uiName && rules.some((r) => r.id === UI_RULE)) return true;
+  const { patchedUi, patchedCode } = await chrome.storage.local.get(['patchedUi', 'patchedCode']);
+  if (patchedUi === uiName && patchedCode) return true;
   try {
     const code = patchUi(await fetchText(ORIGIN + uiName), uiName);
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: [UI_RULE],
-      addRules: [{
-        id: UI_RULE, priority: 2,
-        action: { type: 'redirect', redirect: { url: 'data:text/javascript;charset=utf-8,' + encodeURIComponent(code) } },
-        condition: { regexFilter: `^${esc(ORIGIN + uiName)}$`, resourceTypes: ['script'] },
-      }],
-    });
-    // content.js 看到 patchedUi 變了會重新整理遊戲頁（觸發這次補丁的那一頁還是舊的 ui）
-    await chrome.storage.local.set({ patchedUi: uiName, patchError: null });
+    // 同一次 set：content.js 收到一個變更事件、重新整理一次
+    await chrome.storage.local.set({ patchedUi: uiName, patchedCode: code, patchError: null });
     return true;
   } catch (e) {
     console.warn('ui 補丁失敗', e);
-    await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: [UI_RULE] });
-    await chrome.storage.local.set({ patchedUi: null, patchError: `${uiName}：${e.message ?? e}` });
+    await chrome.storage.local.set({ patchedUi: null, patchedCode: null, patchError: `${uiName}：${e.message ?? e}` });
     return false;
   }
 }
@@ -57,6 +46,8 @@ const refresh = () => (running = running.then(refreshNow, refreshNow)); // 串�
 
 async function refreshNow() {
   const m = await meta;
+  // 舊版擴充用 DNR 把 ui 轉向 data:，正式版 Chrome 會回 503 讓遊戲卡死；升級上來的要清掉
+  await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: [OLD_UI_RULE] });
   const s = await chrome.storage.local.get(['seenUi', 'seenKo', 'off', 'cov']);
   // 還沒看過遊戲載入哪一版時（剛安裝），先對建置時的版本預打；失敗不算 disabled——
   // 遊戲可能已經換版，等真的看到版本再判斷，不要讓剛裝好的人看到紅色「!」
