@@ -1,1 +1,22 @@
-<!doctype html><meta charset="utf-8"><p>D2 Survivors 繁中</p>
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<style>
+  body { width: 280px; margin: 0; padding: 12px 14px; font: 13px/1.5 "Microsoft JhengHei", system-ui, sans-serif; background: #15120e; color: #e8dcc0; }
+  h1 { font-size: 15px; margin: 0 0 8px; color: #c7a250; }
+  .row { margin: 6px 0; }
+  .warn { color: #ff8a65; }
+  .dim { color: #9a8f78; font-size: 12px; word-break: break-all; }
+  button { margin-top: 8px; width: 100%; padding: 6px; background: #2b241a; color: #e8dcc0; border: 1px solid #5a4a30; border-radius: 4px; cursor: pointer; font: inherit; }
+  button:hover { background: #3a3022; }
+  label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+</style>
+<h1>D2 Survivors 繁體中文</h1>
+<div class="row" id="state"></div>
+<div class="row" id="cov"></div>
+<div class="row dim" id="ver"></div>
+<label class="row"><input type="checkbox" id="off"> 暫時停用（改回英文）</label>
+<button id="export">匯出漏翻清單</button>
+<div class="row dim" id="msg"></div>
+<script src="popup.js"></script>
+</html>

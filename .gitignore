@@ -1,4 +1,5 @@
-.claude/
+.claude/progress.md
+.claude/settings.local.json
 node_modules/
 dist/
 game/

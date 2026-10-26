@@ -1,5 +1,5 @@
 // 用 Playwright 的 Chromium 載入未封裝擴充，打開遊戲頁，印出畫面文字與字典請求
-// 用法：NODE_PATH="$(npm root -g)" node tools/smoke.cjs [url] [截圖路徑]
+// 用法：node tools/smoke.cjs [url] [截圖路徑]
 const path = require('path');
 const os = require('os');
 const fs = require('fs');

@@ -1,5 +1,5 @@
 // 抓遊戲目前版本的 JS（原版、不載入擴充）到 game/，給 build.mjs 用
-// 用法：NODE_PATH="$(npm root -g)" node tools/fetch-game.cjs
+// 用法：node tools/fetch-game.cjs
 const path = require('path');
 const fs = require('fs');
 const { chromium } = require('playwright');
@@ -22,8 +22,11 @@ const { chromium } = require('playwright');
       saved.push(name);
     } catch {}
   });
-  await page.goto('https://d2survivors.lol/play/', { waitUntil: 'networkidle' });
-  await page.waitForTimeout(3000);
+  // 首頁的 landing/site 腳本帶網站層字串（site-keys.mjs 用），遊戲頁的帶 ui/ko
+  for (const u of ['https://d2survivors.lol/', 'https://d2survivors.lol/play/']) {
+    await page.goto(u, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(3000);
+  }
   await browser.close();
   const need = ['ui-', 'ko-'].map((p) => saved.filter((n) => n.startsWith(p)));
   console.log(`抓到 ${saved.length} 個檔；ui: ${need[0]}；ko: ${need[1]}`);

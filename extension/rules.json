@@ -9,7 +9,7 @@
       }
     },
     "condition": {
-      "regexFilter": "^https://d2survivors\\.lol/assets/ko-CPoCS4zR\\.js$",
+      "regexFilter": "^https://d2survivors\\.lol/assets/ko-[A-Za-z0-9_-]+\\.js$",
       "resourceTypes": [
         "script"
       ]
