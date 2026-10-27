@@ -10,6 +10,7 @@ const info = { 'ext-version': chrome.runtime.getManifest().version };
   const s = await chrome.storage.local.get(['seen', 'off', 'disabled', 'cov', 'patchError', 'update', 'perf']);
   const seen = s.seen ?? {};
   showPerf(s.perf);
+  saved = JSON.stringify(readPerf());
   if (s.update?.latest && isNewer(s.update.latest, info['ext-version'])) {
     $('update').hidden = false;
     $('update').append(`有新版 v${s.update.latest}（目前 v${info['ext-version']}）：`, Object.assign(document.createElement('a'), {
@@ -45,24 +46,39 @@ const PRESETS = {
   'p-reset': { res: null, nolights: false, noshadows: false, fps: null },
 };
 function showPerf(p) {
+  if (p === true) p = PRESETS['p-native']; // 1.3.0 的單一開關
   $('res').value = p?.res ? String(p.res) : '';
   $('nolights').checked = !!p?.nolights;
   $('noshadows').checked = !!p?.noshadows;
   $('fps').value = p?.fps ? String(p.fps) : '';
 }
 function describePerf(p) {
+  if (p === true) p = PRESETS['p-native'];
   const on = [p?.res && `解析度 ${p.res}`, p?.nolights && '關光照', p?.noshadows && '關陰影', p?.fps && `${p.fps} FPS`].filter(Boolean);
   return on.length ? on.join('、') : '預設';
 }
-const savePerf = (p) => chrome.storage.local.set({ perf: p });
 const readPerf = () => ({
   res: Number($('res').value) || null,
   nolights: $('nolights').checked,
   noshadows: $('noshadows').checked,
   fps: Number($('fps').value) || null,
 });
-for (const id of ['res', 'nolights', 'noshadows', 'fps']) $(id).addEventListener('change', () => savePerf(readPerf()));
-for (const [id, p] of Object.entries(PRESETS)) $(id).addEventListener('click', () => { showPerf(p); savePerf(p); });
+// 解析度、光照、陰影遊戲只在載入時讀一次，一定要重新整理：選項先填好，按「套用」才存（遊戲頁只重新整理一次）
+let saved = null; // 已套用的設定（JSON），popup 打開時由 showPerf 後記下
+const dirty = () => {
+  const changed = JSON.stringify(readPerf()) !== saved;
+  $('p-apply').disabled = !changed;
+  $('perf-note').textContent = changed ? '尚未套用' : '';
+};
+for (const id of ['res', 'nolights', 'noshadows', 'fps']) $(id).addEventListener('change', dirty);
+for (const [id, p] of Object.entries(PRESETS)) $(id).addEventListener('click', () => { showPerf(p); dirty(); });
+$('p-apply').addEventListener('click', async () => {
+  const p = readPerf();
+  await chrome.storage.local.set({ perf: p });
+  saved = JSON.stringify(p);
+  dirty();
+  $('perf-note').textContent = '已套用';
+});
 
 // 匯出：字典沒翻的 key ＋ 目前分頁遊戲執行中查不到翻譯的字串（快捷鍵提示、遊戲從 D2 檔案讀出的文字等）
 $('export').addEventListener('click', async () => {

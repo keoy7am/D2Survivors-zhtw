@@ -20,6 +20,7 @@
   .presets button { margin-top: 2px; padding: 4px; }
   .tag { margin-top: 8px; font-size: 12px; color: #c7a250; border-bottom: 1px solid #3a3022; }
   .tag.ext { color: #ff8a65; }
+  button:disabled { opacity: .45; cursor: default; }
 </style>
 <h1>D2 Survivors 繁體中文</h1>
 <div class="row new" id="update" hidden></div>
@@ -50,7 +51,8 @@
     </select>
   </label>
   <div class="dim">由擴充放慢瀏覽器的畫面更新，不改遊戲程式；遊戲速度與排行榜紀錄依遊戲時間計算，目前不受影響。</div>
-  <div class="dim" id="perf-note">變更後遊戲頁會自動重新整理。</div>
+  <button type="button" id="p-apply" disabled>套用（遊戲頁會重新整理）</button>
+  <div class="dim" id="perf-note"></div>
 </fieldset>
 <button id="export">匯出漏翻清單</button>
 <div class="row dim" id="msg"></div>

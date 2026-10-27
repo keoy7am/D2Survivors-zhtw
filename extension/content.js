@@ -14,7 +14,9 @@ const PERF = 'd2zh:perf'; // 效能設定 JSON {res, nolights, noshadows, fps}�
 const cachedOff = read(OFF) === '1';
 const cachedMods = read(MODS);
 const cachedPerf = read(PERF);
-const perfValue = (p) => (p && (p.res || p.nolights || p.noshadows || p.fps)
+// 1.3.0 的單一開關 perf: true＝原生設定（popup 改任何一項後就存成新格式）
+const NATIVE = { res: 0.75, nolights: true, noshadows: true, fps: null };
+const perfValue = (p) => ((p = p === true ? NATIVE : p) && (p.res || p.nolights || p.noshadows || p.fps)
   ? JSON.stringify({ res: p.res || null, nolights: !!p.nolights, noshadows: !!p.noshadows, fps: p.fps || null }) : null);
 
 const sync = () => chrome.storage.local.get(['off', 'disabled', 'patches', 'perf'], (s) => {

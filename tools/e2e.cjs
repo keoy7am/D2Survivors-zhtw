@@ -69,12 +69,23 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
     // 從 popup 按預設按鈕（同時測 UI 的接線）
     const perfPopup = await ctx.newPage();
     await perfPopup.goto(sw.url().replace(/[^/]+$/, 'popup.html'));
+    await perfPopup.click('#p-max');
+    check((await state(sw)).perf === undefined && !(await perfPopup.isDisabled('#p-apply')), '預設按鈕只填表，按「套用」前不存設定');
+    await perfPopup.reload();
     const preset = async (id) => {
       await perfPopup.click(`#${id}`);
+      if (!(await perfPopup.isDisabled('#p-apply'))) await perfPopup.click('#p-apply'); // 預設按鈕只填表，按套用才生效
       await page.bringToFront(); // 背景分頁的 rAF 會被瀏覽器壓到每秒 1～2 次，量更新頻率前要切回前景
       await page.waitForTimeout(1500);
       await settle(page);
     };
+    // 1.3.0 留下的單一開關 perf: true 要當成原生設定
+    await sw.evaluate(() => chrome.storage.local.set({ perf: true }));
+    await page.waitForTimeout(1500);
+    await settle(page);
+    await perfPopup.reload();
+    check((await ratio()) === 0.75 && (await perfPopup.inputValue('#res')) === '0.75', `1.3.0 的 perf:true 套用成原生設定（${await ratio()}）`);
+    await preset('p-reset');
     await preset('p-native');
     const low = await ratio();
     check(files && low !== null && Math.abs(low - 0.75) < 0.05, `原生效能：渲染解析度 ${base} → ${low}（d2s:files=${files}）`);
