@@ -95,6 +95,34 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
     const maxFps = await fps();
     check(Math.abs(maxRatio - 0.5) < 0.05, `極致效能：渲染解析度 ${maxRatio}`);
     check(maxFps >= 50 && maxFps <= 70, `極致效能：畫面更新上限 60（${baseFps} → ${maxFps} 次/秒）`);
+    // 自我檢查（popup 打開時問遊戲頁）：從 background 送同一個查詢，看回報的設定與實測值
+    const status = () => sw.evaluate(async () => {
+      const [tab] = await chrome.tabs.query({ url: 'https://d2survivors.lol/play/*' });
+      return chrome.tabs.sendMessage(tab.id, 'perfStatus');
+    });
+    const st1 = await status();
+    check(st1?.perf?.res === 0.5 && st1.perf.fps === 60 && st1.files && Math.abs(st1.ratio - 0.5) < 0.03 && st1.fps >= 50 && st1.fps <= 70,
+      `自我檢查回報實測值（解析度 ${st1?.ratio}、每秒 ${st1?.fps} 次）`);
+    // 畫布出現前就重新整理（F5）：我們加的參數不能黏在網址上
+    // domcontentloaded：擴充已加上參數、遊戲畫布還沒出現（網址還沒還原）
+    await page.goto('https://d2survivors.lol/play/', { waitUntil: 'domcontentloaded' });
+    const midway = await page.evaluate(() => location.search);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await settle(page);
+    const after = await page.evaluate(() => location.search);
+    check(midway.includes('res=') && after === '' && (await ratio()) === 0.5, `載入中按重新整理：網址仍乾淨、設定照樣生效（重新整理前 ${midway}，之後 ${after || '無參數'}）`);
+    // 網址自帶同名參數時，以玩家存的設定為準；網址還原成玩家原本的
+    await page.goto('https://d2survivors.lol/play/?res=0.75');
+    await settle(page);
+    check((await ratio()) === 0.5 && (await page.evaluate(() => location.search)) === '?res=0.75', `網址帶 res=0.75 時以設定 0.5 為準（${await ratio()}）`);
+    // 沒選過遊戲檔案：解析度不套用，自我檢查要回報 files=false（popup 據此提示）
+    await page.goto('https://d2survivors.lol/play/');
+    await page.evaluate(() => localStorage.removeItem('d2s:files'));
+    await page.reload();
+    await settle(page);
+    const st2 = await status();
+    check(st2 && st2.files === false && st2.ratio === base, `沒選遊戲檔案時不套用並回報（files=${st2?.files}、解析度 ${st2?.ratio}）`);
+    await page.evaluate(() => localStorage.setItem('d2s:files', 'hosted'));
     await preset('p-reset');
     check((await ratio()) === base && (await fps()) > 100, `還原後恢復原解析度與更新頻率（${await ratio()}）`);
     await perfPopup.close();

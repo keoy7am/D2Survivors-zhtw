@@ -21,6 +21,9 @@
   .tag { margin-top: 8px; font-size: 12px; color: #c7a250; border-bottom: 1px solid #3a3022; }
   .tag.ext { color: #ff8a65; }
   button:disabled { opacity: .45; cursor: default; }
+  #perf-status { font-size: 12px; }
+  #perf-status.ok { color: #9fd38a; }
+  #perf-status.warn { color: #ff8a65; }
 </style>
 <h1>D2 Survivors 繁體中文</h1>
 <div class="row new" id="update" hidden></div>
@@ -52,6 +55,7 @@
   </label>
   <div class="dim">由擴充放慢瀏覽器的畫面更新，不改遊戲程式；遊戲速度與排行榜紀錄依遊戲時間計算，目前不受影響。</div>
   <button type="button" id="p-apply" disabled>套用（遊戲頁會重新整理）</button>
+  <div class="row" id="perf-status"></div>
   <div class="dim" id="perf-note"></div>
 </fieldset>
 <button id="export">匯出漏翻清單</button>

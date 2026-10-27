@@ -11,6 +11,7 @@ const info = { 'ext-version': chrome.runtime.getManifest().version };
   const seen = s.seen ?? {};
   showPerf(s.perf);
   saved = JSON.stringify(readPerf());
+  checkPerf(s.perf);
   if (s.update?.latest && isNewer(s.update.latest, info['ext-version'])) {
     $('update').hidden = false;
     $('update').append(`有新版 v${s.update.latest}（目前 v${info['ext-version']}）：`, Object.assign(document.createElement('a'), {
@@ -72,12 +73,53 @@ const dirty = () => {
 };
 for (const id of ['res', 'nolights', 'noshadows', 'fps']) $(id).addEventListener('change', dirty);
 for (const [id, p] of Object.entries(PRESETS)) $(id).addEventListener('click', () => { showPerf(p); dirty(); });
+// 確認效能設定真的生效：問目前分頁的遊戲頁（main-world.js 量），沒生效就說原因
+const norm = (p) => {
+  if (p === true) p = PRESETS['p-native'];
+  return JSON.stringify({ res: p?.res || null, nolights: !!p?.nolights, noshadows: !!p?.noshadows, fps: p?.fps || null });
+};
+async function checkPerf(stored) {
+  const p = JSON.parse(norm(stored));
+  const say = (cls, text) => { $('perf-status').className = `row ${cls}`; $('perf-status').textContent = text; };
+  if (!p.res && !p.nolights && !p.noshadows && !p.fps) { say('', ''); return; }
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!/^https:\/\/d2survivors\.lol\/play\/(index\.html)?([?#]|$)/.test(tab?.url ?? '')) {
+    say('dim', '在遊戲頁點擴充圖示，可以確認設定是否生效。');
+    return;
+  }
+  say('dim', '確認設定是否生效中…');
+  let r = null;
+  try { r = await chrome.tabs.sendMessage(tab.id, 'perfStatus'); } catch {}
+  if (!r) { say('warn', '⚠ 無法確認：遊戲頁還在載入，或擴充剛更新（重新整理遊戲頁再試）。'); return; }
+  if (norm(r.perf) !== norm(p)) { say('warn', '⚠ 遊戲頁還在用舊設定：重新整理遊戲頁後生效。'); return; }
+  const native = p.res || p.nolights || p.noshadows;
+  if (native && !r.files) { say('warn', '⚠ 還沒選過遊戲檔案：解析度、光照、陰影要在遊戲設定頁選好檔案後才會生效。'); return; }
+  const done = [];
+  if (p.res) {
+    if (r.ratio === null || Math.abs(r.ratio - p.res) > 0.03) {
+      say('warn', `⚠ 解析度沒有生效（設定 ${p.res}，實際 ${r.ratio?.toFixed(2) ?? '量不到'}）：遊戲可能改版了，請回報。`);
+      return;
+    }
+    done.push(`解析度 ${p.res}`);
+  }
+  // 光照、陰影和解析度是遊戲同一次從網址讀入的，看不到畫面就以解析度生效為準
+  if (p.nolights) done.push('關光照');
+  if (p.noshadows) done.push('關陰影');
+  if (p.fps) {
+    if (r.fps > p.fps * 1.15) { say('warn', `⚠ 畫面上限沒有生效（設定 ${p.fps}，實際每秒 ${r.fps} 次）。`); return; }
+    done.push(`畫面上限 ${p.fps}（實際每秒 ${r.fps} 次）`);
+  }
+  say('ok', `✓ 已生效：${done.join('、')}`);
+}
+
 $('p-apply').addEventListener('click', async () => {
   const p = readPerf();
   await chrome.storage.local.set({ perf: p });
   saved = JSON.stringify(p);
   dirty();
   $('perf-note').textContent = '已套用';
+  $('perf-status').className = 'row dim';
+  $('perf-status').textContent = '遊戲頁重新整理後，再點一次擴充圖示可以確認是否生效。';
 });
 
 // 匯出：字典沒翻的 key ＋ 目前分頁遊戲執行中查不到翻譯的字串（快捷鍵提示、遊戲從 D2 檔案讀出的文字等）

@@ -21,15 +21,26 @@
   // res＝渲染解析度、nolights＝關光照、noshadows＝關陰影（都不在排行榜的作弊參數表裡）。
   // 遊戲畫布出現時 itemArt 早已讀完（它是遊戲入口的靜態 import），立刻把網址還原：排行榜紀錄會帶 location.search。
   // 只在已選過遊戲檔案（d2s:files）時才加：網址有參數會讓遊戲跳過第一次造訪的 setup 頁轉向。
+  // 畫布出現前就重新整理（F5、遊戲自己 reload），會帶著我們加的參數載入；不先拿掉，它會被當成原本的網址
+  // 永遠黏在網址上（關掉設定也不恢復、跟著排行榜紀錄上傳）。所以加參數時在 sessionStorage 記下前後網址，
+  // 這次網址正好是上次加過參數的樣子就先還原。
+  const MARK = 'd2zh:perfUrl';
+  let mark = null;
+  try { mark = JSON.parse(sessionStorage.getItem(MARK)); } catch {}
+  if (mark && location.href === mark.url) history.replaceState(history.state, '', mark.clean);
+  try { sessionStorage.removeItem(MARK); } catch {}
   if (onGame && perf && (perf.res || perf.nolights || perf.noshadows) && read('d2s:files')) {
     const clean = location.href;
     const url = new URL(clean);
-    if (perf.res && !url.searchParams.has('res')) url.searchParams.set('res', String(perf.res));
-    for (const k of ['nolights', 'noshadows']) if (perf[k] && !url.searchParams.has(k)) url.searchParams.set(k, '');
+    // popup 有設定的項目覆蓋網址上的同名參數（玩家存的設定為準）；留在遊戲預設的項目不動網址
+    if (perf.res) url.searchParams.set('res', String(perf.res));
+    for (const k of ['nolights', 'noshadows']) if (perf[k]) url.searchParams.set(k, '');
     history.replaceState(history.state, '', url);
+    try { sessionStorage.setItem(MARK, JSON.stringify({ url: location.href, clean })); } catch {}
     const restore = () => {
       if (!document.querySelector('#stage canvas')) return;
       history.replaceState(history.state, '', clean);
+      // 紀錄不在這裡清：按 F5 時舊頁面可能剛好在卸載前執行到這裡，瀏覽器卻仍用帶參數的網址重新載入
       watch.disconnect();
     };
     const watch = new MutationObserver(restore);
@@ -67,6 +78,21 @@
       if (live.has(id)) { caf(live.get(id)); live.delete(id); }
     };
   }
+  // popup 打開時問「效能設定有沒有生效」（content.js 轉接）：量一次畫布解析度；有鎖幀再數 1 秒畫面更新次數。
+  // 只在被問時量，平常不常駐。回傳這一頁載入時實際用的設定，popup 拿去和存檔的設定比對
+  addEventListener('message', (e) => {
+    if (e.source !== window || e.data?.d2zh !== 'perfAsk') return;
+    const c = document.querySelector('#stage canvas');
+    const done = (fps) => postMessage({
+      d2zh: 'perfReply', id: e.data.id, perf, onGame, files: !!read('d2s:files'),
+      ratio: c?.clientWidth ? c.width / c.clientWidth : null, fps,
+    }, location.origin);
+    if (!(perf?.fps >= 30)) { done(null); return; }
+    let n = 0;
+    const end = performance.now() + 1000;
+    const count = () => { n++; performance.now() < end ? requestAnimationFrame(count) : done(n); };
+    requestAnimationFrame(count);
+  });
   if (!read('d2zh:init')) { write('d2zh:init', '1'); write('d2s:lang', 'ko'); }
   if (read('d2s:lang') !== 'ko') return;
   let mods = null;

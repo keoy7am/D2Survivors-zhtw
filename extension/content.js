@@ -37,17 +37,23 @@ chrome.storage.onChanged.addListener((c, area) => {
 });
 
 // popup 要匯出漏翻清單：遊戲執行中查不到翻譯的字串記在頁面（main-world.js 的翻譯器補丁），透過 postMessage 拿
+// popup 的「效能設定有沒有生效」也同樣轉接（main-world.js 量畫布解析度與畫面更新次數，最多約 1 秒）
+const RELAY = {
+  runtimeMissing: { ask: 'missingAsk', answer: 'missingReply', pick: (d) => d.list, timeout: 1500, fallback: [] },
+  perfStatus: { ask: 'perfAsk', answer: 'perfReply', pick: (d) => d, timeout: 3000, fallback: null },
+};
 chrome.runtime.onMessage.addListener((msg, _, reply) => {
-  if (msg !== 'runtimeMissing') return;
+  const r = RELAY[msg];
+  if (!r) return;
   const id = Math.random().toString(36).slice(2);
   const on = (e) => {
-    if (e.source !== window || e.data?.d2zh !== 'missingReply' || e.data.id !== id) return;
+    if (e.source !== window || e.data?.d2zh !== r.answer || e.data.id !== id) return;
     removeEventListener('message', on);
-    reply(e.data.list);
+    reply(r.pick(e.data));
   };
   addEventListener('message', on);
-  postMessage({ d2zh: 'missingAsk', id }, location.origin);
-  setTimeout(() => { removeEventListener('message', on); reply([]); }, 1500);
+  postMessage({ d2zh: r.ask, id }, location.origin);
+  setTimeout(() => { removeEventListener('message', on); reply(r.fallback); }, r.timeout);
   return true;
 });
 
