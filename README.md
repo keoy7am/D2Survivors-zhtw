@@ -20,6 +20,10 @@
 
 只支援瀏覽器版（Chrome、Edge），桌面版 exe 用不到。
 
+## 回報問題
+
+到 [Issues](https://github.com/keoy7am/D2Survivors-zhtw/issues) 開一則回報。沒翻到或翻錯的字，請附上擴充圖示「匯出漏翻清單」的檔案，或寫明哪一句、在哪個畫面。
+
 ## 運作方式
 
 遊戲本身內建翻譯引擎（以英文原句為 key 的韓文字典），並把文字畫在 canvas 上。擴充：
