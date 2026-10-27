@@ -53,6 +53,23 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
     check(st.disabled === false && st.patches?.['ui-']?.name === st.seen?.['ui-'], `補丁對上遊戲版本（${st.patches?.['ui-']?.name}）`);
     check(st.cov?.total > 10000, `覆蓋率已計算（${st.cov?.covered}/${st.cov?.total}）`);
 
+    // 效能模式：遊戲的畫質參數要在 itemArt 讀網址前加上（畫布解析度變 0.75 倍），畫布出現後網址要還原
+    const ratio = () => page.evaluate(() => { const c = document.querySelector('#stage canvas'); return c ? +(c.width / c.clientWidth).toFixed(2) : null; });
+    // 自動化瀏覽器會跳過 setup 頁，沒有 d2s:files；真實玩家選過遊戲檔案才有，模擬「選了託管檔案」
+    const files = await page.evaluate(() => { localStorage.setItem('d2s:files', 'hosted'); return localStorage.getItem('d2s:files'); });
+    const base = await ratio();
+    await sw.evaluate(() => chrome.storage.local.set({ perf: true }));
+    await page.waitForTimeout(1500);
+    await settle(page);
+    const low = await ratio();
+    check(files && low !== null && Math.abs(low - 0.75) < 0.05, `效能模式：渲染解析度 ${base} → ${low}（d2s:files=${files}）`);
+    check(await page.evaluate(() => location.search) === '', '效能模式：畫布出現後網址已還原（排行榜紀錄不帶參數）');
+    await sw.evaluate(() => chrome.storage.local.set({ perf: false }));
+    await page.waitForTimeout(1500);
+    await settle(page);
+    check((await ratio()) === base, `關閉效能模式恢復原解析度（${await ratio()}）`);
+    await page.evaluate(() => localStorage.removeItem('d2s:files'));
+
     // 新版偵測：真的查到 GitHub 的最新版；假裝有新版時圖示顯示 NEW、popup 顯示下載提示
     check(await waitFor(async () => (await state(sw)).update?.latest), `新版檢查查到 GitHub 最新版（v${(await state(sw)).update?.latest}）`);
     const realUpdate = (await state(sw)).update;

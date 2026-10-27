@@ -10,14 +10,17 @@ const read = (k) => { try { return localStorage.getItem(k); } catch { return nul
 const write = (k, v) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} };
 write('d2zh:ui', null); // 舊版的單一模組快取
 
+const PERF = 'd2zh:perf'; // 效能模式（main-world.js 在遊戲頁加畫質參數）
 const cachedOff = read(OFF) === '1';
 const cachedMods = read(MODS);
+const cachedPerf = read(PERF) === '1';
 
-const sync = () => chrome.storage.local.get(['off', 'disabled', 'patches'], (s) => {
+const sync = () => chrome.storage.local.get(['off', 'disabled', 'patches', 'perf'], (s) => {
   const off = !!(s.off || s.disabled);
   const mods = s.patches?.['ui-'] ? JSON.stringify(s.patches) : null;
   let reload = false;
   if (off !== cachedOff) { write(OFF, off ? '1' : null); reload = true; }
+  if (!!s.perf !== cachedPerf) { write(PERF, s.perf ? '1' : null); reload = true; }
   if (mods !== cachedMods) { write(MODS, mods); reload = true; }
   // 補丁碼到了且沒停用：把暫時退回的英文還原成使用者選的繁中
   if (!off && mods && read(PENDING)) { write(PENDING, null); write('d2s:lang', 'ko'); reload = true; }
@@ -25,7 +28,7 @@ const sync = () => chrome.storage.local.get(['off', 'disabled', 'patches'], (s) 
 });
 sync();
 chrome.storage.onChanged.addListener((c, area) => {
-  if (area === 'local' && ('off' in c || 'disabled' in c || 'patches' in c)) sync();
+  if (area === 'local' && ('off' in c || 'disabled' in c || 'patches' in c || 'perf' in c)) sync();
 });
 
 // popup 要匯出漏翻清單：遊戲執行中查不到翻譯的字串記在頁面（main-world.js 的翻譯器補丁），透過 postMessage 拿

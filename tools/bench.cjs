@@ -27,6 +27,8 @@ const [mode = 'ours', secs = '20'] = process.argv.slice(2);
     await page.waitForTimeout(6000);
     if (process.env.PERF) {
       const sw = ctx.serviceWorkers().find((w) => w.url().endsWith('/background.js'));
+      // 效能模式只在選過遊戲檔案（d2s:files）時生效；自動化瀏覽器沒有，模擬「選了託管檔案」
+      await page.evaluate(() => localStorage.setItem('d2s:files', 'hosted'));
       await sw.evaluate(() => chrome.storage.local.set({ perf: true }));
       await page.waitForTimeout(3000);
     }

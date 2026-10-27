@@ -7,8 +7,9 @@ const info = { 'ext-version': chrome.runtime.getManifest().version };
 
 (async () => {
   const meta = await (await fetch('meta.json')).json();
-  const s = await chrome.storage.local.get(['seen', 'off', 'disabled', 'cov', 'patchError', 'update']);
+  const s = await chrome.storage.local.get(['seen', 'off', 'disabled', 'cov', 'patchError', 'update', 'perf']);
   const seen = s.seen ?? {};
+  $('perf').checked = !!s.perf;
   if (s.update?.latest && isNewer(s.update.latest, info['ext-version'])) {
     $('update').hidden = false;
     $('update').append(`有新版 v${s.update.latest}（目前 v${info['ext-version']}）：`, Object.assign(document.createElement('a'), {
@@ -30,11 +31,12 @@ const info = { 'ext-version': chrome.runtime.getManifest().version };
     $('cov').textContent = '覆蓋率：打開一次遊戲後才會計算';
   }
   const changed = (seen['ui-'] && seen['ui-'] !== meta.files['ui-']) || (seen['ko-'] && seen['ko-'] !== meta.files['ko-']);
-  info['game-version'] = `${seen['ui-'] ?? '未開過遊戲'}；覆蓋率 ${s.cov ? `${s.cov.covered}/${s.cov.total}` : '未計算'}`;
+  info['game-version'] = `${seen['ui-'] ?? '未開過遊戲'}；覆蓋率 ${s.cov ? `${s.cov.covered}/${s.cov.total}` : '未計算'}；效能模式 ${s.perf ? '開' : '關'}`;
   $('ver').textContent = `遊戲版本 ${seen['ui-'] ?? '（尚未開過遊戲）'}；譯文建置於 ${meta.builtAt.slice(0, 10)}${changed ? '，之後遊戲有改版，新字串會顯示原文' : ''}`;
 })();
 
 $('off').addEventListener('change', (e) => chrome.storage.local.set({ off: e.target.checked }));
+$('perf').addEventListener('change', (e) => chrome.storage.local.set({ perf: e.target.checked }));
 
 // 匯出：字典沒翻的 key ＋ 目前分頁遊戲執行中查不到翻譯的字串（快捷鍵提示、遊戲從 D2 檔案讀出的文字等）
 $('export').addEventListener('click', async () => {
