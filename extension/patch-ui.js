@@ -33,9 +33,10 @@ export function patchUi(src, fileName) {
   if (!/from"\.\//.test(src)) throw new Error('找不到相對 import，檔案結構變了');
   let s = absolutize(src, fileName);
   // 2. 「外文字」判斷：原本只有諺文走 fillText，加上 CJK（U+2E80 起，含全形標點）
-  s = once(s, /(function \w+\((\w)\)\{let (\w)=\2\.charCodeAt\(0\);return )(\3>=44032)/, '$1$3>=11904||$4', '外文字判斷');
+  // 壓縮後的名稱可能含 $（ui-xCajNz-v.js 起函式叫 $），所以用 [\w$]
+  s = once(s, /(function [\w$]+\(([\w$])\)\{let ([\w$])=\2\.charCodeAt\(0\);return )(\3>=44032)/, (_, head, _p, v, rest) => `${head}${v}>=11904||${rest}`, '外文字判斷');
   // 3. 斷行（整個方法換掉，參數名不管壓縮成什麼都行）
-  s = once(s, /wrapLines\(\w+,\w+\)\{[\s\S]*?\}return \w+\}(?=balanceLines\()/, () => WRAP, '斷行');
+  s = once(s, /wrapLines\([\w$]+,[\w$]+\)\{[\s\S]*?\}return [\w$]+\}(?=balanceLines\()/, () => WRAP, '斷行');
   // 4. 字型後備：D2R 韓文字型只涵蓋諺文，中文要落到系統繁中字型
   s = once(s, /px "\$\{this\.foreignFamily\}"`/, () => 'px "${this.foreignFamily}"' + FALLBACK + '`', '字型後備');
   return s + HELPERS;
@@ -60,9 +61,9 @@ return r};
 globalThis.__d2zhTranslatePatched=true})();`;
 
 export function patchTranslate(src, fileName) {
-  const m = src.match(/var (\w+)=class\{exact=new Map/g);
+  const m = src.match(/var ([\w$]+)=class\{exact=new Map/g);
   if (!m || m.length !== 1) throw new Error(`翻譯器 class 命中 ${m ? m.length : 0} 次（應為 1）`);
-  const C = /var (\w+)=class/.exec(m[0])[1];
+  const C = /var ([\w$]+)=class/.exec(m[0])[1];
   for (const method of ['lookup(', 'find(', 'translate(']) if (!src.includes(method)) throw new Error(`翻譯器少了 ${method}，結構變了`);
   return absolutize(src, fileName) + TRANSLATE_HELPERS(C);
 }

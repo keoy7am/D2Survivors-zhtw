@@ -19,6 +19,13 @@ let threw = false;
 try { patchUi('import{a}from"./x.js";var y=1;', 'ui-x.js'); } catch { threw = true; }
 eq(threw, true); // 結構不符必須丟錯，不能靜默產出半套補丁
 
+// 壓縮後的名稱可能是 $（ui-xCajNz-v.js 曾讓「外文字判斷」命中 0 次）：用 $ 命名的合成檔也要打得上，且中文判斷正確
+const fake = 'import{a}from"./x.js";function $(e){let t=e.charCodeAt(0);return t>=44032&&t<=55203||t>=12592&&t<=12687}'
+  + 'class F{wrapLines($,_){let n=[];for(let r of $){n.push(r)}return n}balanceLines(){}f(s){return `${s}px "${this.foreignFamily}"`}}';
+const patched = patchUi(fake, 'ui-fake.js');
+const isForeign = new Function(`${/function \$\(e\)\{[^}]*\}/.exec(patched)[0]};return $`)();
+eq(['中', '，', '가', 'A'].map(isForeign), [true, true, true, false]);
+
 const game = path.resolve(import.meta.dirname, '..', 'game');
 
 // 翻譯器補丁：拿 game/ 裡真的 translate-*.js 打補丁後載入，驗行為
