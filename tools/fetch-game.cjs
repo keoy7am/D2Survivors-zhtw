@@ -28,7 +28,8 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(3000);
   }
   await browser.close();
-  const need = ['ui-', 'ko-'].map((p) => saved.filter((n) => n.startsWith(p)));
+  // 同一個檔可能載入兩次（ko 字典在排行榜頁與遊戲頁都會抓），只看檔名種類
+  const need = ['ui-', 'ko-'].map((p) => [...new Set(saved.filter((n) => n.startsWith(p)))]);
   console.log(`抓到 ${saved.length} 個檔；ui: ${need[0]}；ko: ${need[1]}`);
   if (need.some((l) => l.length !== 1)) process.exit(1);
 })();
