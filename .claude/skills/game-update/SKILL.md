@@ -10,6 +10,6 @@ description: D2 Survivors 遊戲改版後更新繁中擴充：抓新版、重打
 3. 對 `i18n/todo/` 每一批平行派 subagent（`model: sonnet`），每批 `node tools/verify-batch.mjs <批名>` 必須通過。subagent 回報完成不算數，由主迴圈跑 verify 確認。
 4. `npm run merge` exit 0、`npm run build` 覆蓋率不低於改版前、`npm run e2e` 全部 PASS。
 5. `node tools/smoke.cjs https://d2survivors.lol/play/ <截圖>` 並親眼看截圖：中文正常、沒有 `?`。
-6. `npm run pack`、commit、push（不要改 `manifest.json` 的 version，那是 owner 發布時才定）。
+6. `npm run pack`、commit、push。`extension/` 有任何變動（含譯文）就要先用 AskUserQuestion 問 owner 新版本號並改 `manifest.json` 的 version——同一個版本號不能有兩份內容，`npm test` 的 `check-version.mjs` 會擋。號碼由 owner 定，不要自己挑。
 
 回報使用者：新版檔名、新增／已翻條數、覆蓋率、zip 路徑。需要使用者拍板的（例如補丁改不動、要不要改譯名）用 AskUserQuestion 問。

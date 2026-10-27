@@ -8,7 +8,7 @@ description: 發佈 D2 Survivors 繁中擴充：打 tag、建 GitHub Release、�
 1. **版本號**：使用者訊息裡有版本號就用它；沒有就看 `extension/manifest.json` 目前的 version 與最新 tag（`git tag -l 'v*' --sort=-v:refname | head -1`）：
    - 目前 version 還沒有對應的 tag → 用目前的 version。
    - 已經有 tag → 用 AskUserQuestion 問版本號，建議值放第一個。
-   版本號由 owner 決定，不要自己跳號。
+   版本號由 owner 決定，不要自己跳號。通常改 `extension/` 時就已經問過並調好了（`check-version.mjs` 要求擴充一改就換號），這時直接用 manifest 的版本。
 2. **發佈前檢查**（任一失敗就停下來回報）：`npm test`、`npm run build`（記下覆蓋率）、`npm run e2e` 全部 PASS。有未提交的譯文或程式變更先 commit、push。
    **owner 要先在自己的 Chrome 手動測過 `dist/` 的 zip 才發佈**：自上次 owner 實測後若擴充程式有改，先 `npm run pack`、通知 owner 測（PushNotification），等他說沒問題再繼續。e2e 用的 Chromium 和正式版 Chrome 行為不同（曾經 e2e 全綠、正式版黑屏）。
 3. **撰寫改版內容**：寫到 scratchpad 的 `release-notes.md`。讀者是安裝擴充的玩家，不是開發者。素材：`git log <上一個 tag>..HEAD`（沒有 tag 就看全部）、`extension/meta.json`（覆蓋率、對應遊戲版本）。格式：

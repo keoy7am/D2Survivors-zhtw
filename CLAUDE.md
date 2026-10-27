@@ -33,7 +33,7 @@
 3. 翻譯：每批派一個 subagent（`model: sonnet`），提示裡給它 `i18n/STYLE.md`、`i18n/glossary.json` 的路徑與批名，要求寫 `i18n/done/<批名>.json` 並跑 `node tools/verify-batch.mjs <批名>` 到通過。批次互不重疊，可以平行（量大時用 Workflow 的 pipeline：翻譯 → verify 未過再派一次修正）。
 4. `npm run merge` → `npm run build`（看覆蓋率）→ `npm run e2e`。
 5. 實機看一眼：`node tools/smoke.cjs https://d2survivors.lol/play/ shot.png`，確認畫面是中文、沒有 `?`、沒有溢出。
-6. commit、push，回報覆蓋率，等 owner 說「發佈」再走下面的發佈流程。**`manifest.json` 的 `version` 由 owner 決定，agent 不要自行調整。**把 `dist/*.zip` 給朋友（解壓覆蓋舊資料夾，到 `chrome://extensions` 按重新載入）。
+6. commit、push，回報覆蓋率，等 owner 說「發佈」再走下面的發佈流程。**版本號：同一個號碼不能有兩份內容**——`extension/` 和目前版本的已發佈 tag 不同時，先用 AskUserQuestion 問 owner 新號碼並改 `manifest.json`，再推送或打包給 owner 測（`npm test` 的 `tools/check-version.mjs` 會擋）。號碼由 owner 定，agent 不自己挑。把 `dist/*.zip` 給朋友（解壓覆蓋舊資料夾，到 `chrome://extensions` 按重新載入）。
 
 網站層文字（`i18n/site.json`，英文原文 → 繁中）：`node tools/site-keys.mjs game/*.js` 列出缺譯的英文句子，補翻後重建；build 也會報「網站層缺譯 N 條」。網站新增頁面時，把該頁 URL 加進 `tools/fetch-game.cjs` 才抓得到它的腳本。
 
