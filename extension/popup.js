@@ -1,4 +1,7 @@
 const $ = (id) => document.getElementById(id);
+const ISSUES = 'https://github.com/keoy7am/D2Survivors-zhtw/issues';
+// 回報表單預填的版本資訊（.github/ISSUE_TEMPLATE 的欄位 id）；只放版本，不放任何個人資料
+const info = { 'ext-version': chrome.runtime.getManifest().version };
 
 (async () => {
   const meta = await (await fetch('meta.json')).json();
@@ -18,6 +21,7 @@ const $ = (id) => document.getElementById(id);
     $('cov').textContent = '覆蓋率：打開一次遊戲後才會計算';
   }
   const changed = (seen['ui-'] && seen['ui-'] !== meta.files['ui-']) || (seen['ko-'] && seen['ko-'] !== meta.files['ko-']);
+  info['game-version'] = `${seen['ui-'] ?? '未開過遊戲'}；覆蓋率 ${s.cov ? `${s.cov.covered}/${s.cov.total}` : '未計算'}`;
   $('ver').textContent = `遊戲版本 ${seen['ui-'] ?? '（尚未開過遊戲）'}；譯文建置於 ${meta.builtAt.slice(0, 10)}${changed ? '，之後遊戲有改版，新字串會顯示原文' : ''}`;
 })();
 
@@ -38,5 +42,13 @@ $('export').addEventListener('click', async () => {
   const blob = new Blob([JSON.stringify(keys.map((k) => ({ k })), null, 1)], { type: 'application/json' });
   const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `d2zh-missing-${r.koName.replace(/\.js$/, '')}.json` });
   a.click();
-  $('msg').textContent = `已匯出 ${keys.length} 條（字典 ${r.missing.length}、遊戲畫面 ${runtime.length}）`;
+  $('msg').textContent = `已匯出 ${keys.length} 條（字典 ${r.missing.length}、遊戲畫面 ${runtime.length}），可在回報時附上這個檔案`;
+});
+
+$('report').addEventListener('click', () => {
+  chrome.tabs.create({ url: `${ISSUES}/new?${new URLSearchParams({ template: 'translation.yml', ...info })}` });
+});
+$('report-other').addEventListener('click', (e) => {
+  e.preventDefault();
+  chrome.tabs.create({ url: `${ISSUES}/new?${new URLSearchParams({ template: 'bug.yml', ...info })}` });
 });

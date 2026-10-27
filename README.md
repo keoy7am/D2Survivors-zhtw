@@ -22,7 +22,14 @@
 
 ## 回報問題
 
-到 [Issues](https://github.com/keoy7am/D2Survivors-zhtw/issues) 開一則回報。沒翻到或翻錯的字，請附上擴充圖示「匯出漏翻清單」的檔案，或寫明哪一句、在哪個畫面。
+按擴充圖示的「回報翻譯問題」，會打開 GitHub 的回報表單並帶入擴充與遊戲版本。也可以直接到 [Issues](https://github.com/keoy7am/D2Survivors-zhtw/issues/new/choose) 選範本：
+
+- **翻譯問題**：漏翻、錯譯、用語不一致。大量漏翻請附上擴充圖示「匯出漏翻清單」的檔案。
+- **擴充錯誤**：黑屏、紅色 !、中文變成 `?`、卡住。
+
+## 協作
+
+歡迎修正譯文或改進擴充，請先讀 [協作指南](CONTRIBUTING.md)（譯文來源、翻譯規範、檢查步驟、PR 規則）。
 
 ## 運作方式
 

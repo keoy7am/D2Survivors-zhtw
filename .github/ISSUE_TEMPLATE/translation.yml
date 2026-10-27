@@ -1,0 +1,49 @@
+name: 翻譯問題（漏翻／錯譯／用語）
+description: 遊戲或網站上沒翻到、翻錯、或用語不一致的文字
+title: "[翻譯] "
+labels: ["translation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝回報！一則回報可以列好幾句。
+        **大量漏翻**：在擴充圖示按「匯出漏翻清單」，把下載的 `d2zh-missing-*.json` 拖進下面的「補充」欄附上即可。
+        用語原則見 [翻譯規範](https://github.com/keoy7am/D2Survivors-zhtw/blob/main/i18n/STYLE.md)：物品、技能、怪物、地名以《暗黑破壞神 II：獄火重生》台灣官方譯名為準。
+  - type: input
+    id: where
+    attributes:
+      label: 在哪個畫面
+      placeholder: 例：升級卡片、技能樹說明框、恰西的商店、排行榜
+    validations:
+      required: true
+  - type: textarea
+    id: lines
+    attributes:
+      label: 原文與目前譯文
+      description: 一行一句。看不到英文原文的話，按網站右上角「EN」切到英文對照，或附截圖。
+      placeholder: |
+        英文原文：Damage Reduced by 10%
+        目前顯示：傷害降低 10%
+        建議譯文：傷害減免 10%
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: 為什麼要改（選填）
+      description: 例如官方譯名不同、語意相反、太長溢出畫面。有官方來源請附上。
+  - type: textarea
+    id: extra
+    attributes:
+      label: 補充（截圖、漏翻清單檔案）
+      description: 圖片或 .json 檔可以直接拖進來。
+  - type: input
+    id: ext-version
+    attributes:
+      label: 擴充版本
+      description: 從擴充圖示的「回報翻譯問題」進來會自動帶入。
+  - type: input
+    id: game-version
+    attributes:
+      label: 遊戲版本與覆蓋率
+      description: 從擴充圖示進來會自動帶入。

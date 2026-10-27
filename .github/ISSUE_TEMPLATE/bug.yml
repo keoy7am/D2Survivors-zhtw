@@ -1,0 +1,50 @@
+name: 擴充錯誤（黑屏、紅色 !、卡住、顯示 ?）
+description: 擴充本身的問題，不是單句翻譯
+title: "[錯誤] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        先試一次：到 `chrome://extensions` 按擴充的「重新載入」，再重新整理遊戲頁。仍有問題再回報。
+        擴充圖示出現**紅色 !** 通常是遊戲剛改版、擴充還沒跟上，維護者更新後會發新版。
+  - type: textarea
+    id: what
+    attributes:
+      label: 發生什麼事
+      placeholder: 例：進入 /play/ 後整個畫面黑掉；中文字都變成 ?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 怎麼重現
+      placeholder: |
+        1. 打開 https://d2survivors.lol/play/
+        2. 選角色後按開始
+        3. ……
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: 截圖、主控台錯誤（選填）
+      description: 在遊戲頁按 F12 → Console，紅色錯誤訊息可以截圖或貼上。擴充圖示 popup 的文字也請一起截圖。
+  - type: input
+    id: browser
+    attributes:
+      label: 瀏覽器與版本
+      description: 網址列輸入 chrome://version 看第一行。
+      placeholder: 例：Chrome 156.0.7700.12（Windows 11）
+    validations:
+      required: true
+  - type: input
+    id: ext-version
+    attributes:
+      label: 擴充版本
+      description: 從擴充圖示的回報連結進來會自動帶入。
+  - type: input
+    id: game-version
+    attributes:
+      label: 遊戲版本與覆蓋率
+      description: 從擴充圖示進來會自動帶入。
