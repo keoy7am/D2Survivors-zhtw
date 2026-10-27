@@ -98,6 +98,11 @@ chrome.webRequest.onBeforeRequest.addListener(
 chrome.runtime.onInstalled.addListener(refresh);
 chrome.runtime.onStartup.addListener(refresh);
 chrome.runtime.onInstalled.addListener(update);
+// 1.3.0 的效能模式是單一開關（perf: true）：升級後換成同等的原生設定
+chrome.runtime.onInstalled.addListener(async () => {
+  const { perf } = await chrome.storage.local.get('perf');
+  if (perf === true) await chrome.storage.local.set({ perf: { res: 0.75, nolights: true, noshadows: true, fps: null } });
+});
 chrome.runtime.onStartup.addListener(update);
 chrome.storage.onChanged.addListener((c, area) => { if (area === 'local' && 'update' in c) refresh(); });
 chrome.storage.onChanged.addListener((c, area) => { if (area === 'local' && 'off' in c) refresh(); });

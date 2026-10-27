@@ -10,17 +10,20 @@ const read = (k) => { try { return localStorage.getItem(k); } catch { return nul
 const write = (k, v) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} };
 write('d2zh:ui', null); // 舊版的單一模組快取
 
-const PERF = 'd2zh:perf'; // 效能模式（main-world.js 在遊戲頁加畫質參數）
+const PERF = 'd2zh:perf'; // 效能設定 JSON {res, nolights, noshadows, fps}（main-world.js 套用）；全是預設就不存
 const cachedOff = read(OFF) === '1';
 const cachedMods = read(MODS);
-const cachedPerf = read(PERF) === '1';
+const cachedPerf = read(PERF);
+const perfValue = (p) => (p && (p.res || p.nolights || p.noshadows || p.fps)
+  ? JSON.stringify({ res: p.res || null, nolights: !!p.nolights, noshadows: !!p.noshadows, fps: p.fps || null }) : null);
 
 const sync = () => chrome.storage.local.get(['off', 'disabled', 'patches', 'perf'], (s) => {
   const off = !!(s.off || s.disabled);
   const mods = s.patches?.['ui-'] ? JSON.stringify(s.patches) : null;
   let reload = false;
   if (off !== cachedOff) { write(OFF, off ? '1' : null); reload = true; }
-  if (!!s.perf !== cachedPerf) { write(PERF, s.perf ? '1' : null); reload = true; }
+  const perf = perfValue(s.perf);
+  if (perf !== cachedPerf) { write(PERF, perf); reload = true; }
   if (mods !== cachedMods) { write(MODS, mods); reload = true; }
   // 補丁碼到了且沒停用：把暫時退回的英文還原成使用者選的繁中
   if (!off && mods && read(PENDING)) { write(PENDING, null); write('d2s:lang', 'ko'); reload = true; }

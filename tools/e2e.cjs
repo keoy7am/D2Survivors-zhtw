@@ -57,17 +57,36 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
     const ratio = () => page.evaluate(() => { const c = document.querySelector('#stage canvas'); return c ? +(c.width / c.clientWidth).toFixed(2) : null; });
     // 自動化瀏覽器會跳過 setup 頁，沒有 d2s:files；真實玩家選過遊戲檔案才有，模擬「選了託管檔案」
     const files = await page.evaluate(() => { localStorage.setItem('d2s:files', 'hosted'); return localStorage.getItem('d2s:files'); });
+    // 頁面 1 秒內的畫面更新次數（headless 不鎖幀時約 360）
+    const fps = () => page.evaluate(() => new Promise((res) => {
+      let n = 0;
+      const end = performance.now() + 1000;
+      const f = (t) => { n++; t < end ? requestAnimationFrame(f) : res(n); };
+      requestAnimationFrame(f);
+    }));
     const base = await ratio();
-    await sw.evaluate(() => chrome.storage.local.set({ perf: true }));
-    await page.waitForTimeout(1500);
-    await settle(page);
+    const baseFps = await fps();
+    // 從 popup 按預設按鈕（同時測 UI 的接線）
+    const perfPopup = await ctx.newPage();
+    await perfPopup.goto(sw.url().replace(/[^/]+$/, 'popup.html'));
+    const preset = async (id) => {
+      await perfPopup.click(`#${id}`);
+      await page.bringToFront(); // 背景分頁的 rAF 會被瀏覽器壓到每秒 1～2 次，量更新頻率前要切回前景
+      await page.waitForTimeout(1500);
+      await settle(page);
+    };
+    await preset('p-native');
     const low = await ratio();
-    check(files && low !== null && Math.abs(low - 0.75) < 0.05, `效能模式：渲染解析度 ${base} → ${low}（d2s:files=${files}）`);
+    check(files && low !== null && Math.abs(low - 0.75) < 0.05, `原生效能：渲染解析度 ${base} → ${low}（d2s:files=${files}）`);
     check(await page.evaluate(() => location.search) === '', '效能模式：畫布出現後網址已還原（排行榜紀錄不帶參數）');
-    await sw.evaluate(() => chrome.storage.local.set({ perf: false }));
-    await page.waitForTimeout(1500);
-    await settle(page);
-    check((await ratio()) === base, `關閉效能模式恢復原解析度（${await ratio()}）`);
+    await preset('p-max');
+    const maxRatio = await ratio();
+    const maxFps = await fps();
+    check(Math.abs(maxRatio - 0.5) < 0.05, `極致效能：渲染解析度 ${maxRatio}`);
+    check(maxFps >= 50 && maxFps <= 70, `極致效能：畫面更新上限 60（${baseFps} → ${maxFps} 次/秒）`);
+    await preset('p-reset');
+    check((await ratio()) === base && (await fps()) > 100, `還原後恢復原解析度與更新頻率（${await ratio()}）`);
+    await perfPopup.close();
     await page.evaluate(() => localStorage.removeItem('d2s:files'));
 
     // 新版偵測：真的查到 GitHub 的最新版；假裝有新版時圖示顯示 NEW、popup 顯示下載提示

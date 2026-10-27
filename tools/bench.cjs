@@ -3,7 +3,7 @@
 //   noext    不載入擴充（英文原版，基準）
 //   ours     載入 extension/
 //   bookmark 不載入擴充，進遊戲頁後執行第三方書籤版 d2_zh.js（只為比較）
-// 環境變數 EXT=<資料夾> 可換擴充；PERF=1 先開啟效能模式（若擴充支援）
+// 環境變數 EXT=<資料夾> 可換擴充；PERF=native|max 先套用原生／極致效能
 // headless 的 WebGL 是軟體模擬，絕對值偏高；只看同一台機器、同一指令下的相對差異
 const path = require('path');
 const os = require('os');
@@ -29,7 +29,11 @@ const [mode = 'ours', secs = '20'] = process.argv.slice(2);
       const sw = ctx.serviceWorkers().find((w) => w.url().endsWith('/background.js'));
       // 效能模式只在選過遊戲檔案（d2s:files）時生效；自動化瀏覽器沒有，模擬「選了託管檔案」
       await page.evaluate(() => localStorage.setItem('d2s:files', 'hosted'));
-      await sw.evaluate(() => chrome.storage.local.set({ perf: true }));
+      const presets = {
+        native: { res: 0.75, nolights: true, noshadows: true, fps: null },
+        max: { res: 0.5, nolights: true, noshadows: true, fps: 60 },
+      };
+      await sw.evaluate((p) => chrome.storage.local.set({ perf: p }), presets[process.env.PERF] ?? presets.native);
       await page.waitForTimeout(3000);
     }
   }

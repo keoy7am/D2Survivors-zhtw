@@ -13,17 +13,19 @@
     if (e.source !== window || e.data?.d2zh !== 'missingAsk') return;
     postMessage({ d2zh: 'missingReply', id: e.data.id, list: [...(globalThis.__d2zhMissing ?? [])] }, location.origin);
   });
-  // 效能模式（popup 開關，content.js 同步成 d2zh:perf）：用遊戲作者內建的畫質網址參數，不打補丁。
-  // itemArt 模組載入時讀一次 location.search：res＝渲染解析度、nolights＝關光照、noshadows＝關陰影（都不在排行榜的作弊參數表裡）。
-  // ponytail: res 固定 0.75——遊戲自己的自動降解析度最低也到 0.75，作者認為可玩；DPR 1 的電腦也有效。不夠或太糊再改成可選。
-  // 遊戲畫布出現時 itemArt 早已讀完（它是遊戲入口的靜態 import），立刻把網址還原：
-  // 排行榜紀錄會帶 location.search，不讓參數跟著上傳。
+  // 效能設定（popup → content.js 同步成 d2zh:perf：{res, nolights, noshadows, fps}），只在遊戲頁套用
+  let perf = null;
+  try { perf = JSON.parse(read('d2zh:perf')); } catch {}
+  const onGame = /^\/play\/(index\.html)?$/.test(location.pathname);
+  // 原生：遊戲作者內建的畫質網址參數，itemArt 模組載入時讀一次 location.search：
+  // res＝渲染解析度、nolights＝關光照、noshadows＝關陰影（都不在排行榜的作弊參數表裡）。
+  // 遊戲畫布出現時 itemArt 早已讀完（它是遊戲入口的靜態 import），立刻把網址還原：排行榜紀錄會帶 location.search。
   // 只在已選過遊戲檔案（d2s:files）時才加：網址有參數會讓遊戲跳過第一次造訪的 setup 頁轉向。
-  if (/^\/play\/(index\.html)?$/.test(location.pathname) && read('d2zh:perf') === '1' && read('d2s:files')) {
+  if (onGame && perf && (perf.res || perf.nolights || perf.noshadows) && read('d2s:files')) {
     const clean = location.href;
     const url = new URL(clean);
-    if (!url.searchParams.has('res')) url.searchParams.set('res', '0.75');
-    for (const k of ['nolights', 'noshadows']) if (!url.searchParams.has(k)) url.searchParams.set(k, '');
+    if (perf.res && !url.searchParams.has('res')) url.searchParams.set('res', String(perf.res));
+    for (const k of ['nolights', 'noshadows']) if (perf[k] && !url.searchParams.has(k)) url.searchParams.set(k, '');
     history.replaceState(history.state, '', url);
     const restore = () => {
       if (!document.querySelector('#stage canvas')) return;
@@ -32,6 +34,38 @@
     };
     const watch = new MutationObserver(restore);
     watch.observe(document.documentElement, { subtree: true, childList: true });
+  }
+  // 非原生：畫面更新上限。遊戲沒設上限（每次 requestAnimationFrame 都跑邏輯＋繪圖），這裡放慢瀏覽器回呼的頻率。
+  // 遊戲邏輯依每幀實際經過時間推進（ticker deltaMS），遊戲速度與紀錄的遊戲時間不變。
+  // 每個真實畫面只決定一次放不放行；放行間隔用累加的方式，高刷新率螢幕上平均才會接近設定值。
+  if (onGame && perf?.fps >= 30) {
+    const raf = requestAnimationFrame.bind(window);
+    const caf = cancelAnimationFrame.bind(window);
+    const gap = 1000 / perf.fps;
+    let last = -Infinity;
+    let openAt = -1;
+    const open = (t) => {
+      if (t === openAt) return true;
+      if (t - last < gap - 1) return false;
+      last = t - last > gap * 2 ? t : last + gap;
+      openAt = t;
+      return true;
+    };
+    let seq = 0;
+    const live = new Map(); // 我們回傳的 id → 目前真正排著的 rAF id（延後時會換），cancel 才取消得到
+    window.requestAnimationFrame = (cb) => {
+      const id = ++seq;
+      const step = (t) => {
+        if (!open(t)) { live.set(id, raf(step)); return; }
+        live.delete(id);
+        cb(t);
+      };
+      live.set(id, raf(step));
+      return id;
+    };
+    window.cancelAnimationFrame = (id) => {
+      if (live.has(id)) { caf(live.get(id)); live.delete(id); }
+    };
   }
   if (!read('d2zh:init')) { write('d2zh:init', '1'); write('d2s:lang', 'ko'); }
   if (read('d2s:lang') !== 'ko') return;
