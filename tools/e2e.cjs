@@ -116,9 +116,12 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
     fs.writeFileSync(path.join(tmp, 'meta.json'), JSON.stringify(meta));
     const { ctx, sw, page } = await launch(tmp);
     check(await waitFor(async () => (await state(sw)).patchError?.includes('ui-OLDVERSION.js')), '剛安裝時預打舊版失敗，記下原因');
-    // patchError 和 disabled 是先後兩次寫入：等 disabled 寫好再判斷，不然偶爾讀到 undefined
+    // 曾經的 bug：擴充自己抓舊檔（404）被 webRequest 記成「遊戲載入過」，幾秒後才翻成 disabled。等一下再看
     await waitFor(async () => 'disabled' in (await state(sw)));
-    check((await state(sw)).disabled === false, '還沒看過遊戲版本，不亮紅色 !（disabled=false）');
+    await page.waitForTimeout(4000);
+    const pre = await state(sw);
+    check(!pre.seen?.['ui-'], `擴充自己抓的檔不算遊戲載入過（seen ui-：${pre.seen?.['ui-'] ?? '無'}）`);
+    check(pre.disabled === false, '還沒看過遊戲版本，不亮紅色 !（disabled=false）');
     await page.goto('https://d2survivors.lol/play/').catch(() => {});
     check(await waitFor(async () => { const st = await state(sw); return !!st.seen?.['ui-'] && st.patches?.['ui-']?.name === st.seen['ui-']; }), '看到新版 ui 後自動打補丁');
     await settle(page);

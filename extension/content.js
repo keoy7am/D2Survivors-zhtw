@@ -101,6 +101,12 @@ const relabel = () => {
 const start = () => {
   const all = () => { relabel(); translate(); };
   all();
-  new MutationObserver(all).observe(document.body, { subtree: true, childList: true, characterData: true });
+  // 遊戲 HUD 每幀都在改 DOM：同一幀的變動合併成一次處理（rAF 在下次繪製前執行，不會先閃出韓文）
+  let queued = false;
+  new MutationObserver(() => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => { queued = false; all(); });
+  }).observe(document.body, { subtree: true, childList: true, characterData: true });
 };
 document.body ? start() : document.addEventListener('DOMContentLoaded', start, { once: true });

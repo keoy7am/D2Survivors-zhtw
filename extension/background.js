@@ -82,6 +82,9 @@ const update = () => (checking ??= checkUpdate().finally(() => { checking = null
 
 chrome.webRequest.onBeforeRequest.addListener(
   (d) => {
+    // 擴充自己抓原檔打補丁、算覆蓋率的請求（tabId -1）不算「遊戲載入過」：
+    // 否則遊戲改版後新安裝時，預打的舊檔 404 會被當成看過的版本 → 誤判 disabled、亮紅色 !
+    if (d.tabId < 0) return;
     update(); // 打開遊戲時順便檢查新版（12 小時內查過就直接略過）
     const name = d.url.slice(ORIGIN.length);
     const prefix = ['ko-', ...PREFIXES].find((p) => name.startsWith(p));
