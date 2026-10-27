@@ -15,7 +15,8 @@
 
 ## 風格
 - 術語以 `i18n/glossary.json` 為準（有就照用）；沒有的名詞以《暗黑破壞神 II：獄火重生》官方繁中為準，不確定時取台灣玩家常用譯名。
-- **官方譯名優先於直覺**：Aura＝靈氣（不是光環）、Stamina＝精力、Energy＝能量、Vitality＝體能、Act＝章（第一章、各章首領，不用「幕」）。審查時覺得「光環比較通順」也不要改，玩家對照的是官方版。
+- **官方譯名優先於直覺**：Aura＝靈氣（不是光環）、Stamina＝精力、Energy＝能量、Vitality＝體能、Act＝章（第一章、各章首領，不用「幕」）。審查時覺得「光環比較通順」也不要改，玩家對照的是官方版。官方譯名和玩家習慣不同時也照官方（Sorceress＝魔法使、Andariel＝安達莉爾、Duriel＝都瑞爾；owner 2026-10-27 決定）。
+- 遊戲自創詞的譯名已定案（owner 2026-10-27）：Terror tier＝邪惡威脅層級、Horadric Codex＝赫拉迪姆寶典、Run＝一局、Build（角色）＝流派、Draft＝選卡、Reroll＝重抽、Banish＝放逐、Skill modifier＝技能變化、Evolve＝進化、Magic Find＝魔法物品尋獲率、Treasure Thief＝寶藏竊賊。
 - 元素傷害與抗性用官方的「冰寒」「電擊」（冰寒傷害、電擊抗性）；「閃電」只用在技能名（閃電專精、連鎖閃電）。
 - **刻意偏離官方（owner 決定）**：Damage Reduced（受到的傷害減少）＝「傷害減免」（官方是「傷害降低」）；技能變化的代價 It deals X% less damage＝「造成的傷害減少 X%」。兩者意思相反，不可都寫成「傷害降低」。
 - 介面按鈕看語境，不要照字面：REPORT＝回報問題（錯誤回報，不是舉報）；Build 後面接版本號時＝版本，指角色時＝流派／配置；手把按鍵 Cross／Circle／Square／Triangle＝叉鍵／圈鍵／方塊鍵／三角鍵。

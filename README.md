@@ -76,4 +76,6 @@ npm run update         # 抓新版 → 檢查補丁 → 官方譯名預填 → �
 
 ## 授權與聲明
 
+本專案的程式與譯文以 [MIT 授權](LICENSE) 釋出；提交 PR 即表示同意你的貢獻以相同授權釋出。
+
 Diablo®、Diablo II® 與 Blizzard Entertainment® 是 Blizzard Entertainment, Inc. 的商標。D2 Survivors 由 framara 製作。本擴充不包含遊戲作者的程式碼，只在使用者的瀏覽器裡修補。
