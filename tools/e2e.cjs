@@ -116,6 +116,8 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
     fs.writeFileSync(path.join(tmp, 'meta.json'), JSON.stringify(meta));
     const { ctx, sw, page } = await launch(tmp);
     check(await waitFor(async () => (await state(sw)).patchError?.includes('ui-OLDVERSION.js')), '剛安裝時預打舊版失敗，記下原因');
+    // patchError 和 disabled 是先後兩次寫入：等 disabled 寫好再判斷，不然偶爾讀到 undefined
+    await waitFor(async () => 'disabled' in (await state(sw)));
     check((await state(sw)).disabled === false, '還沒看過遊戲版本，不亮紅色 !（disabled=false）');
     await page.goto('https://d2survivors.lol/play/').catch(() => {});
     check(await waitFor(async () => { const st = await state(sw); return !!st.seen?.['ui-'] && st.patches?.['ui-']?.name === st.seen['ui-']; }), '看到新版 ui 後自動打補丁');
