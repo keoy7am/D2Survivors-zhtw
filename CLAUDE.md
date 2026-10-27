@@ -38,7 +38,7 @@
 3. 翻譯：每批派一個 subagent（`model: sonnet`），提示裡給它 `i18n/STYLE.md`、`i18n/glossary.json` 的路徑與批名，要求寫 `i18n/done/<批名>.json` 並跑 `node tools/verify-batch.mjs <批名>` 到通過。批次互不重疊，可以平行（量大時用 Workflow 的 pipeline：翻譯 → verify 未過再派一次修正）。
 4. `npm run merge` → `npm run build`（看覆蓋率）→ `npm run e2e`。
 5. 實機看一眼：`node tools/smoke.cjs https://d2survivors.lol/play/ shot.png`，確認畫面是中文、沒有 `?`、沒有溢出。
-6. commit、push，回報覆蓋率，等 owner 說「發佈」再走下面的發佈流程。**版本號：同一個號碼不能有兩份內容**——`extension/` 和目前版本的已發佈 tag 不同時，先用 AskUserQuestion 問 owner 新號碼並改 `manifest.json`，再推送或打包給 owner 測（`npm test` 的 `tools/check-version.mjs` 會擋）。號碼由 owner 定，agent 不自己挑。把 `dist/*.zip` 給朋友（解壓覆蓋舊資料夾，到 `chrome://extensions` 按重新載入）。
+6. commit、push，驗證全過就直接走下面的發佈流程（owner 2026-10-27 授權：修好驗證好直接發佈）。**版本號：同一個號碼不能有兩份內容**——`extension/` 和目前版本的已發佈 tag 不同時，先照慣例 patch 遞增改 `manifest.json`，再推送或打包（`npm test` 的 `tools/check-version.mjs` 會擋）。把 `dist/*.zip` 給朋友（解壓覆蓋舊資料夾，到 `chrome://extensions` 按重新載入）。
 
 網站層文字（`i18n/site.json`，英文原文 → 繁中）：`node tools/site-keys.mjs game/*.js` 列出缺譯的英文句子，補翻後重建；build 也會報「網站層缺譯 N 條」。網站新增頁面時，把該頁 URL 加進 `tools/fetch-game.cjs` 才抓得到它的腳本。
 
@@ -50,8 +50,8 @@
 
 譯文品質：`node tools/audit-terms.mjs` 列出句子裡沒用術語表譯名的地方（Diablo II→暗黑破壞神 II 這類是誤報）；非官方人名用 `tools/fix-names.mjs` 的對照表統一。
 
-## 發佈（使用者說「發佈」時；`/release` skill）
-- 使用者說「發佈」就是授權建 tag、推送、建 GitHub Release，照 `.claude/skills/release/SKILL.md` 做：測試全過 → 撰寫玩家看得懂的改版內容 → `node tools/release.mjs <版本> <改版內容檔>`。
+## 發佈（修好驗證完、或使用者說「發佈」時；`/release` skill）
+- owner 2026-10-27 授權修好、驗證完就直接建 tag、推送、建 GitHub Release，照 `.claude/skills/release/SKILL.md` 做：測試、e2e（含解壓後的發佈檔）、smoke 全過 → 撰寫玩家看得懂的改版內容 → `node tools/release.mjs <版本> <改版內容檔>`。
 - 發佈檔（`npm run pack`）：`d2survivors-zhtw/` 資料夾＝擴充檔案＋`安裝說明.html`（來源 `docs/install.html`）。**不得含 `.md`**，pack 會擋。zip 由 Node 自己寫（UTF-8 檔名、斜線路徑），不用系統壓縮工具。
 - 驗證發佈檔：解壓後 `EXT=<解壓資料夾>/d2survivors-zhtw node tools/e2e.cjs`。
 
