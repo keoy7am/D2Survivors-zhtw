@@ -24,7 +24,7 @@
   a { color: var(--gold); }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px 20px; }
   .badge { display: inline-block; min-width: 2.4em; text-align: center; border-radius: 4px; padding: 0 6px; font-weight: bold; color: #fff; font-size: 13px; }
-  .g { background: #2e7d32; } .r { background: #c62828; } .o { background: #757575; }
+  .g { background: #2e7d32; } .r { background: #c62828; } .o { background: #757575; } .b { background: #1565c0; }
   table { width: 100%; border-collapse: collapse; }
   td { padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
   td:first-child { width: 72px; }
@@ -50,6 +50,7 @@
   <h2>圖示上的標記</h2>
   <table>
     <tr><td><span class="badge g">97</span></td><td>正常運作，數字是翻譯覆蓋率（%）。</td></tr>
+    <tr><td><span class="badge b">NEW</span></td><td>有新版擴充，按擴充圖示可以看到版本與下載連結（更新方法見下方）。</td></tr>
     <tr><td><span class="badge o">off</span></td><td>你暫時停用了（按擴充圖示可以切換）。</td></tr>
     <tr><td><span class="badge r">!</span></td><td>遊戲大改版，中文顯示機制暫時失效，已自動改回英文，請等新版擴充。</td></tr>
   </table>
@@ -60,6 +61,7 @@
     <li>下載新版 zip，解壓後<strong>覆蓋</strong>舊的 <code>d2survivors-zhtw</code> 資料夾。</li>
     <li>到 <code>chrome://extensions</code>，在這個擴充上按「重新載入」（圓形箭頭）。</li>
   </ol>
+  <p class="note">擴充每 12 小時最多一次向 GitHub 查詢最新版本（只是一般的網頁請求，不送出任何個人資料或遊戲紀錄），有新版時圖示會顯示 <span class="badge b">NEW</span>。手動安裝的擴充無法自動更新，仍要照上面的步驟換新版。</p>
 
   <h2>常見問題</h2>
   <ul>

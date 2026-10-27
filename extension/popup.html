@@ -10,9 +10,12 @@
   button { margin-top: 8px; width: 100%; padding: 6px; background: #2b241a; color: #e8dcc0; border: 1px solid #5a4a30; border-radius: 4px; cursor: pointer; font: inherit; }
   button:hover { background: #3a3022; }
   a { color: #c7a250; }
+  .new { padding: 6px 8px; border: 1px solid #1565c0; border-radius: 4px; background: #0d2340; color: #cfe3ff; }
+  .new a { color: #8ec5ff; font-weight: bold; }
   label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
 </style>
 <h1>D2 Survivors 繁體中文</h1>
+<div class="row new" id="update" hidden></div>
 <div class="row" id="state"></div>
 <div class="row" id="cov"></div>
 <div class="row dim" id="ver"></div>
@@ -21,5 +24,5 @@
 <div class="row dim" id="msg"></div>
 <button id="report">回報翻譯問題</button>
 <div class="row dim">程式錯誤、黑屏或其他問題：<a href="#" id="report-other">到 GitHub 回報</a></div>
-<script src="popup.js"></script>
+<script type="module" src="popup.js"></script>
 </html>

@@ -1,3 +1,5 @@
+import { isNewer, RELEASES } from './update.js';
+
 const $ = (id) => document.getElementById(id);
 const ISSUES = 'https://github.com/keoy7am/D2Survivors-zhtw/issues';
 // 回報表單預填的版本資訊（.github/ISSUE_TEMPLATE 的欄位 id）；只放版本，不放任何個人資料
@@ -5,8 +7,15 @@ const info = { 'ext-version': chrome.runtime.getManifest().version };
 
 (async () => {
   const meta = await (await fetch('meta.json')).json();
-  const s = await chrome.storage.local.get(['seen', 'off', 'disabled', 'cov', 'patchError']);
+  const s = await chrome.storage.local.get(['seen', 'off', 'disabled', 'cov', 'patchError', 'update']);
   const seen = s.seen ?? {};
+  if (s.update?.latest && isNewer(s.update.latest, info['ext-version'])) {
+    $('update').hidden = false;
+    $('update').append(`有新版 v${s.update.latest}（目前 v${info['ext-version']}）：`, Object.assign(document.createElement('a'), {
+      href: '#', textContent: '下載',
+      onclick: (e) => { e.preventDefault(); chrome.tabs.create({ url: s.update.url || RELEASES }); },
+    }), '，解壓覆蓋舊資料夾後到 chrome://extensions 按重新載入。');
+  }
   $('off').checked = !!s.off;
   if (s.disabled) {
     $('state').className = 'row warn';

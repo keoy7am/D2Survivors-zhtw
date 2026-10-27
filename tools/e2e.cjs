@@ -53,6 +53,27 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
     check(st.disabled === false && st.patches?.['ui-']?.name === st.seen?.['ui-'], `補丁對上遊戲版本（${st.patches?.['ui-']?.name}）`);
     check(st.cov?.total > 10000, `覆蓋率已計算（${st.cov?.covered}/${st.cov?.total}）`);
 
+    // 新版偵測：真的查到 GitHub 的最新版；假裝有新版時圖示顯示 NEW、popup 顯示下載提示
+    check(await waitFor(async () => (await state(sw)).update?.latest), `新版檢查查到 GitHub 最新版（v${(await state(sw)).update?.latest}）`);
+    const realUpdate = (await state(sw)).update;
+    await sw.evaluate(() => chrome.storage.local.set({ update: { latest: '99.0.0', url: 'https://github.com/keoy7am/D2Survivors-zhtw/releases', checkedAt: Date.now() } }));
+    check(await waitFor(() => sw.evaluate(async () => (await chrome.action.getBadgeText({})) === 'NEW')), '有新版時圖示顯示 NEW');
+    const popup = await ctx.newPage();
+    await popup.goto(sw.url().replace(/[^/]+$/, 'popup.html'));
+    await popup.waitForTimeout(500);
+    const notice = await popup.evaluate(() => { const el = document.getElementById('update'); return el.hidden ? null : el.textContent; });
+    check(notice?.includes('v99.0.0'), `popup 顯示新版提示（${notice}）`);
+    const [issue] = await Promise.all([ctx.waitForEvent('page'), popup.click('#report')]);
+    await issue.waitForLoadState('commit').catch(() => {});
+    // 沒登入 GitHub 時會先轉到登入頁，表單網址放在 return_to
+    const u = new URL(issue.url());
+    const q = new URL(u.searchParams.get('return_to') ?? u.href, u.origin).searchParams;
+    check(q.get('template') === 'translation.yml' && q.get('ext-version') && q.get('game-version')?.includes('ui-'),
+      `回報按鈕開翻譯回報表單並帶入版本（${q.get('ext-version')}；${q.get('game-version')}）`);
+    await issue.close();
+    await popup.close();
+    await sw.evaluate((u) => chrome.storage.local.set({ update: u }), realUpdate);
+
     await page.goto('https://d2survivors.lol/');
     await settle(page);
     const look = () => page.evaluate(() => ({

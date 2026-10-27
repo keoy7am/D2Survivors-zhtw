@@ -12,6 +12,7 @@
      - translate（遊戲翻譯器，所有遊戲文字都經過它）：最外層查不到時試「名稱 (快捷鍵)」拆開（迷你面板提示 `Character (C)`）、「A. B」分段（地區標題）；韓文日期轉中文；仍查不到的字串記在頁面 `globalThis.__d2zhMissing`，popup「匯出漏翻清單」會帶上。打不上只略過，不影響翻譯。**補強只放在最外層**：深層遞迴是原引擎在試模板，提早給半套結果會搶掉更好的拆法（曾讓地區標題變成「第 I: … 章」）。
   3. `content.js`（isolated world）：把背景狀態與補丁碼同步到頁面 localStorage（`d2zh:off`、`d2zh:mods`），不同時重新整理遊戲頁一次；轉接 popup 的漏翻查詢給 main-world。網站層文字（選單、首頁、排行榜）照**韓文原文**換成繁中：`site-dict.js` 的 `D2ZH_SITE_KO` 由 build 從網站腳本的 `{en:{…},ko:{…}}` 配對產生（`i18n/site.json` 以英文原文為 key——不同物件有同名 key 代表不同句子，不能用 key 對照）。整句 → 模板（`{0}`）→ 長句子片段 → 句中模板 → 短片段。換過的元素標 `data-no-translate`，否則和遊戲自己的 DOM 翻譯器互相改寫，**整個分頁卡死**（曾發生）。`site.css`：繁中模式顯示英文版 FAQ 段落、繁中字型排在韓文字型前。
   4. `main-world.js`（MAIN world、document_start）：網站的 EN／繁中（原「한국어」）按鈕就是語言開關（`d2s:lang` en／ko），**不替使用者改選擇**；只有第一次安裝預設繁中、遊戲頁沒補丁碼時暫時退回 en（`d2zh:pendingKo`，補丁碼到了由 content.js 還原）。繁中時插 import map 把 `ui-<hash>.js` 對應到補丁版的 `blob:` 網址。
+  5. `update.js`＋popup：新版偵測（打開遊戲／瀏覽器啟動時，12 小時內最多查一次 GitHub `releases/latest`，存 storage `update`；有新版 badge 藍色 `NEW`，優先序低於紅色 `!` 與 off）；popup「回報翻譯問題」開 `.github/ISSUE_TEMPLATE/translation.yml` 並以 query 預填欄位 id `ext-version`、`game-version`——**改範本欄位 id 要同步改 popup.js**。
 - **不要改回 DNR 轉向 `data:`**：正式版 Chrome 156 對被轉向到 `data:` 的 script 回 503，遊戲黑屏（Playwright 的 Chromium 141／151 卻正常，e2e 抓不到）。import map 也必須在 MAIN world 插，isolated world 插的 inline script 會被擴充 CSP 擋。e2e 全綠不等於正式版 Chrome 能用，發佈前要 owner 實測。
 - 每個補丁 regex 必須恰好命中一次。對「遊戲實際載入過的版本」打不上（作者改了渲染器結構）才 `disabled=true`；剛安裝、還沒看過版本時預打失敗不算：停用字典規則、切回英文、badge 紅色 `!`、popup 顯示 `patchError`。不這樣做，中文會整片畫成 `?`。**這是唯一需要改程式的改版情況**；其他改版只需要補翻新字串。
 

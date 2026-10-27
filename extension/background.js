@@ -8,6 +8,7 @@
 import zh from './zh-TW.js';
 import { dictKeys } from './dict-keys.js';
 import { PATCHERS } from './patch-ui.js';
+import { checkUpdate, isNewer } from './update.js';
 
 const ORIGIN = 'https://d2survivors.lol/assets/';
 const OLD_UI_RULE = 100;
@@ -33,7 +34,7 @@ async function refreshNow() {
   const m = await meta;
   // 舊版擴充用 DNR 把 ui 轉向 data:，正式版 Chrome 會回 503 讓遊戲卡死；升級上來的要清掉
   await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: [OLD_UI_RULE] });
-  const s = await chrome.storage.local.get(['seen', 'off', 'cov', 'patches']);
+  const s = await chrome.storage.local.get(['seen', 'off', 'cov', 'patches', 'update']);
   const seen = s.seen ?? {};
   const patches = { ...(s.patches ?? {}) };
   const errors = [];
@@ -69,12 +70,19 @@ async function refreshNow() {
     }
   }
   const pct = cov ? Math.floor((cov.covered / cov.total) * 100) : null;
-  await chrome.action.setBadgeBackgroundColor({ color: disabled ? '#c62828' : s.off ? '#757575' : '#2e7d32' });
-  await chrome.action.setBadgeText({ text: disabled ? '!' : s.off ? 'off' : pct === null ? '' : `${pct}` });
+  // 紅色 ! 與 off 優先；有新版時顯示 NEW（覆蓋率在 popup 裡仍看得到）
+  const fresh = s.update?.latest && isNewer(s.update.latest, chrome.runtime.getManifest().version);
+  await chrome.action.setBadgeBackgroundColor({ color: disabled ? '#c62828' : s.off ? '#757575' : fresh ? '#1565c0' : '#2e7d32' });
+  await chrome.action.setBadgeText({ text: disabled ? '!' : s.off ? 'off' : fresh ? 'NEW' : pct === null ? '' : `${pct}` });
 }
+
+// 遊戲一載入就連發好幾個請求：同一時間只查一次。寫進 storage 的 update 會觸發下面的 onChanged → refresh 更新圖示
+let checking = null;
+const update = () => (checking ??= checkUpdate().finally(() => { checking = null; }));
 
 chrome.webRequest.onBeforeRequest.addListener(
   (d) => {
+    update(); // 打開遊戲時順便檢查新版（12 小時內查過就直接略過）
     const name = d.url.slice(ORIGIN.length);
     const prefix = ['ko-', ...PREFIXES].find((p) => name.startsWith(p));
     chrome.storage.local.get('seen').then(({ seen = {} }) => {
@@ -86,6 +94,9 @@ chrome.webRequest.onBeforeRequest.addListener(
 
 chrome.runtime.onInstalled.addListener(refresh);
 chrome.runtime.onStartup.addListener(refresh);
+chrome.runtime.onInstalled.addListener(update);
+chrome.runtime.onStartup.addListener(update);
+chrome.storage.onChanged.addListener((c, area) => { if (area === 'local' && 'update' in c) refresh(); });
 chrome.storage.onChanged.addListener((c, area) => { if (area === 'local' && 'off' in c) refresh(); });
 
 // popup 要匯出漏翻清單：字典沒翻的 key
