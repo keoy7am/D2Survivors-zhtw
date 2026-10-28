@@ -15,18 +15,22 @@ export function isNewer(latest, current) {
   return false;
 }
 
-export async function checkUpdate(now = Date.now()) {
+// force：popup 的「檢查更新」按鈕，不管 12 小時間隔立刻查。回傳 { latest, error }
+export async function checkUpdate(now = Date.now(), force = false) {
   const { update } = await chrome.storage.local.get('update');
-  if (update && now - update.checkedAt < EVERY) return;
+  if (!force && update && now - update.checkedAt < EVERY) return { latest: update.latest ?? null, error: null };
   const next = { ...update, checkedAt: now };
+  let error = null;
   try {
-    const r = await fetch(LATEST, { headers: { Accept: 'application/vnd.github+json' } });
+    const r = await fetch(LATEST, { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' });
     if (!r.ok) throw new Error(`GitHub 回 ${r.status}`);
     const { tag_name, html_url } = await r.json();
     next.latest = String(tag_name).replace(/^v/, '');
     next.url = String(html_url).startsWith(RELEASES + '/') ? html_url : RELEASES; // 只開本 repo 的 Releases 頁
   } catch (e) {
     console.warn('新版檢查失敗', e);
+    error = e.message ?? String(e);
   }
   await chrome.storage.local.set({ update: next });
+  return { latest: next.latest ?? null, error };
 }

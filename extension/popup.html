@@ -2,65 +2,72 @@
 <html lang="zh-Hant">
 <meta charset="utf-8">
 <style>
-  body { width: 280px; margin: 0; padding: 12px 14px; font: 13px/1.5 "Microsoft JhengHei", system-ui, sans-serif; background: #15120e; color: #e8dcc0; }
-  h1 { font-size: 15px; margin: 0 0 8px; color: #c7a250; }
-  .row { margin: 6px 0; }
+  /* Chrome 的 popup 最高約 600px：一般情況（沒有新版提示、沒有錯誤）要一頁看完，不用捲動 */
+  body { width: 340px; margin: 0; padding: 10px 12px; font: 13px/1.45 "Microsoft JhengHei", system-ui, sans-serif; background: #15120e; color: #e8dcc0; }
+  header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+  h1 { font-size: 15px; margin: 0; color: #c7a250; }
+  #ext-ver { margin-left: auto; }
+  .row { margin: 4px 0; }
   .warn { color: #ff8a65; }
   .dim { color: #9a8f78; font-size: 12px; word-break: break-all; }
-  button { margin-top: 8px; width: 100%; padding: 6px; background: #2b241a; color: #e8dcc0; border: 1px solid #5a4a30; border-radius: 4px; cursor: pointer; font: inherit; }
+  button { padding: 5px 6px; background: #2b241a; color: #e8dcc0; border: 1px solid #5a4a30; border-radius: 4px; cursor: pointer; font: inherit; }
   button:hover { background: #3a3022; }
+  button:disabled { opacity: .45; cursor: default; }
   a { color: #c7a250; }
-  .new { padding: 6px 8px; border: 1px solid #1565c0; border-radius: 4px; background: #0d2340; color: #cfe3ff; }
+  .new { padding: 5px 8px; border: 1px solid #1565c0; border-radius: 4px; background: #0d2340; color: #cfe3ff; }
   .new a { color: #8ec5ff; font-weight: bold; }
   label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
-  .perf { margin: 8px 0; padding: 6px 10px 8px; border: 1px solid #5a4a30; border-radius: 4px; }
+  .btns { display: flex; gap: 6px; margin: 6px 0 4px; }
+  .btns button { flex: 1; }
+  .perf { margin: 6px 0; padding: 4px 10px 8px; border: 1px solid #5a4a30; border-radius: 4px; }
   .perf legend { color: #c7a250; padding: 0 4px; }
   .perf select { margin-left: auto; background: #2b241a; color: #e8dcc0; border: 1px solid #5a4a30; border-radius: 4px; font: inherit; }
-  .presets { display: flex; gap: 6px; }
-  .presets button { margin-top: 2px; padding: 4px; }
-  .tag { margin-top: 8px; font-size: 12px; color: #c7a250; border-bottom: 1px solid #3a3022; }
-  .tag.ext { color: #ff8a65; }
-  button:disabled { opacity: .45; cursor: default; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin-top: 6px; }
+  .tag { font-size: 11px; color: #c7a250; border: 1px solid #5a4a30; border-radius: 3px; padding: 0 3px; white-space: nowrap; }
+  .tag.ext { color: #ff8a65; border-color: #7a3d2a; }
+  #p-apply { width: 100%; margin-top: 6px; }
   #perf-status { font-size: 12px; }
   #perf-status.ok { color: #9fd38a; }
   #perf-status.warn { color: #ff8a65; }
 </style>
-<h1>D2 Survivors 繁體中文</h1>
+<header><h1>D2 Survivors 繁體中文</h1><span class="dim" id="ext-ver"></span></header>
 <div class="row new" id="update" hidden></div>
-<div class="row" id="state"></div>
-<div class="row" id="cov"></div>
+<div class="row"><span id="state"></span> · <span id="cov"></span></div>
 <div class="row dim" id="ver"></div>
 <label class="row"><input type="checkbox" id="off"> 暫時停用（改回英文）</label>
 <fieldset class="perf">
   <legend>效能（卡頓時調整）</legend>
-  <div class="presets">
+  <div class="btns">
     <button type="button" id="p-native" title="解析度 0.75、關閉光照與陰影">原生效能</button>
     <button type="button" id="p-max" title="解析度 0.5、關閉光照與陰影、上限 60 FPS">極致效能</button>
     <button type="button" id="p-reset">還原</button>
   </div>
-  <div class="tag">遊戲內建設定（原生）</div>
-  <label class="row">渲染解析度
-    <select id="res">
-      <option value="">遊戲預設</option><option value="1">1</option><option value="0.75">0.75</option>
-      <option value="0.5">0.5</option><option value="0.25">0.25（最低）</option>
-    </select>
-  </label>
-  <label class="row"><input type="checkbox" id="nolights"> 關閉光照</label>
-  <label class="row"><input type="checkbox" id="noshadows"> 關閉陰影</label>
-  <div class="tag ext">擴充額外限制（非遊戲原生）</div>
-  <label class="row">畫面更新上限
-    <select id="fps">
-      <option value="">不限制</option><option value="120">120 FPS</option><option value="60">60 FPS</option><option value="30">30 FPS（最低）</option>
-    </select>
-  </label>
-  <div class="dim">由擴充放慢瀏覽器的畫面更新，不改遊戲程式；遊戲速度與排行榜紀錄依遊戲時間計算，目前不受影響。</div>
+  <div class="grid">
+    <label>解析度 <span class="tag">原生</span>
+      <select id="res">
+        <option value="">預設</option><option value="1">1</option><option value="0.75">0.75</option>
+        <option value="0.5">0.5</option><option value="0.25">0.25</option>
+      </select>
+    </label>
+    <label>FPS 上限 <span class="tag ext">非原生</span>
+      <select id="fps">
+        <option value="">不限</option><option value="120">120</option><option value="60">60</option><option value="30">30</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="nolights"> 關閉光照 <span class="tag">原生</span></label>
+    <label><input type="checkbox" id="noshadows"> 關閉陰影 <span class="tag">原生</span></label>
+  </div>
+  <div class="dim row">原生＝遊戲內建畫質設定，不影響排行榜。FPS 上限由擴充放慢畫面更新（非遊戲原生、不改遊戲程式），遊戲速度與排行榜依遊戲時間計算，目前不受影響。</div>
   <button type="button" id="p-apply" disabled>套用（遊戲頁會重新整理）</button>
   <div class="row" id="perf-status"></div>
   <div class="dim" id="perf-note"></div>
 </fieldset>
-<button id="export">匯出漏翻清單</button>
-<div class="row dim" id="msg"></div>
-<button id="report">回報翻譯問題</button>
-<div class="row dim">程式錯誤、黑屏或其他問題：<a href="#" id="report-other">到 GitHub 回報</a></div>
+<div class="btns">
+  <button id="export">匯出漏翻清單</button>
+  <button id="report">回報翻譯問題</button>
+  <button id="check-update">檢查更新</button>
+</div>
+<div class="dim" id="msg"></div>
+<div class="dim">程式錯誤、黑屏或其他問題：<a href="#" id="report-other">到 GitHub 回報</a></div>
 <script type="module" src="popup.js"></script>
 </html>

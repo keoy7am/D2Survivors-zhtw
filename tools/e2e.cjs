@@ -138,6 +138,12 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
     await popup.waitForTimeout(500);
     const notice = await popup.evaluate(() => { const el = document.getElementById('update'); return el.hidden ? null : el.textContent; });
     check(notice?.includes('v99.0.0'), `popup 顯示新版提示（${notice}）`);
+    // 手動「檢查更新」：不管 12 小時間隔立刻查 GitHub，查完更新提示與訊息
+    await popup.click('#check-update');
+    await popup.waitForFunction(() => /最新版|有新版|檢查失敗/.test(document.getElementById('msg').textContent), null, { timeout: 15000 }).catch(() => {});
+    const checked = await popup.textContent('#msg');
+    check(/最新版|有新版/.test(checked) && !(await popup.isVisible('#update')) === /最新版/.test(checked), `「檢查更新」按鈕（${checked}）`);
+    check((await popup.evaluate(() => Math.ceil(document.body.getBoundingClientRect().height) + 20)) <= 600, 'popup 一般狀態不用捲動（高度 ≤ 600）');
     const [issue] = await Promise.all([ctx.waitForEvent('page'), popup.click('#report')]);
     await issue.waitForLoadState('commit').catch(() => {});
     // 沒登入 GitHub 時會先轉到登入頁，表單網址放在 return_to

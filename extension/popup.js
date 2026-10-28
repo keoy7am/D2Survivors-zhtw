@@ -1,4 +1,4 @@
-import { isNewer, RELEASES } from './update.js';
+import { isNewer, RELEASES, checkUpdate } from './update.js';
 
 const $ = (id) => document.getElementById(id);
 const ISSUES = 'https://github.com/keoy7am/D2Survivors-zhtw/issues';
@@ -12,30 +12,48 @@ const info = { 'ext-version': chrome.runtime.getManifest().version };
   showPerf(s.perf);
   saved = JSON.stringify(readPerf());
   checkPerf(s.perf);
-  if (s.update?.latest && isNewer(s.update.latest, info['ext-version'])) {
-    $('update').hidden = false;
-    $('update').append(`有新版 v${s.update.latest}（目前 v${info['ext-version']}）：`, Object.assign(document.createElement('a'), {
-      href: '#', textContent: '下載',
-      onclick: (e) => { e.preventDefault(); chrome.tabs.create({ url: s.update.url || RELEASES }); },
-    }), '，解壓覆蓋舊資料夾後到 chrome://extensions 按重新載入。');
-  }
+  showUpdate(s.update);
+  $('ext-ver').textContent = `v${info['ext-version']}`;
   $('off').checked = !!s.off;
   if (s.disabled) {
-    $('state').className = 'row warn';
+    $('state').className = 'warn';
     $('state').textContent = `遊戲改版後中文渲染補丁打不上，已暫時改回英文，請等擴充更新。（${s.patchError ?? ''}）`;
   } else {
-    $('state').textContent = s.off ? '已停用' : '翻譯運作中（沒翻到的字串顯示原文）';
+    $('state').textContent = s.off ? '已停用' : '翻譯運作中';
+    $('state').title = '沒翻到的字串顯示原文';
   }
   if (s.cov) {
-    const pct = ((s.cov.covered / s.cov.total) * 100).toFixed(1);
-    $('cov').textContent = `覆蓋率 ${pct}%（${s.cov.covered} / ${s.cov.total} 條）`;
+    $('cov').textContent = `覆蓋率 ${((s.cov.covered / s.cov.total) * 100).toFixed(1)}%`;
+    $('cov').title = `${s.cov.covered} / ${s.cov.total} 條`;
   } else {
-    $('cov').textContent = '覆蓋率：打開一次遊戲後才會計算';
+    $('cov').textContent = '覆蓋率：開一次遊戲後計算';
   }
   const changed = (seen['ui-'] && seen['ui-'] !== meta.files['ui-']) || (seen['ko-'] && seen['ko-'] !== meta.files['ko-']);
   info['game-version'] = `${seen['ui-'] ?? '未開過遊戲'}；覆蓋率 ${s.cov ? `${s.cov.covered}/${s.cov.total}` : '未計算'}；效能 ${describePerf(s.perf)}`;
   $('ver').textContent = `遊戲版本 ${seen['ui-'] ?? '（尚未開過遊戲）'}；譯文建置於 ${meta.builtAt.slice(0, 10)}${changed ? '，之後遊戲有改版，新字串會顯示原文' : ''}`;
 })();
+
+// 有新版時在最上方顯示下載連結（自動檢查或按「檢查更新」）
+function showUpdate(u) {
+  const box = $('update');
+  box.replaceChildren();
+  box.hidden = !(u?.latest && isNewer(u.latest, info['ext-version']));
+  if (box.hidden) return false;
+  box.append(`有新版 v${u.latest}（目前 v${info['ext-version']}）：`, Object.assign(document.createElement('a'), {
+    href: '#', textContent: '下載',
+    onclick: (e) => { e.preventDefault(); chrome.tabs.create({ url: u.url || RELEASES }); },
+  }), '，解壓覆蓋舊資料夾後到 chrome://extensions 按重新載入。');
+  return true;
+}
+$('check-update').addEventListener('click', async () => {
+  $('check-update').disabled = true;
+  $('msg').textContent = '檢查更新中…';
+  const r = await checkUpdate(Date.now(), true);
+  const { update } = await chrome.storage.local.get('update');
+  $('msg').textContent = r.error ? `檢查失敗：${r.error}（稍後再試）`
+    : showUpdate(update) ? `有新版 v${r.latest}，下載連結在最上方。` : `已是最新版（v${info['ext-version']}）。`;
+  $('check-update').disabled = false;
+});
 
 $('off').addEventListener('change', (e) => chrome.storage.local.set({ off: e.target.checked }));
 
