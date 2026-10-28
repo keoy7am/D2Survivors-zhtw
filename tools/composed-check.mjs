@@ -27,6 +27,10 @@ const shapes = [
   (n) => `+1 to ${n} 2 of 3`,
   (n) => `${n} evolved into ${names[3]}!`,
   (n) => `Level 3 ${n}`,
+  // 局內技能列表（`${名稱} ${等級}${ (+加成)}${ - ready to evolve}`；進化後的技能沒有等級）
+  (n) => `${n} 8 (+2) - ready to evolve`,
+  (n) => `${n} 8 - ready to evolve`,
+  (n) => `${n} (+2) - ready to evolve`,
 ];
 const fixed = ['Full Rejuvenation Potion everything is maxed', 'Gold everything is maxed', '+5 stat points to spend', '37 gold', 'Stat points at the cap for level 12'];
 const latin = (s) => /[A-Za-z]{3,}/.test(s.replace(/\b(DPS|MF|XP|FPS|D2R?|Shift|Ctrl|Esc)\b/g, ''));

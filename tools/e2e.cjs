@@ -180,15 +180,15 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
       hangul: /[가-힣]/.test(document.body.innerText + [...document.querySelectorAll('*')].map((e) => getComputedStyle(e, '::before').content).join('')),
     }));
     const home = await look();
-    check(home.lang === 'ko' && home.nav === '排行榜', `首頁預設繁中（${home.lang} ${home.nav}）`);
+    check(home.lang === 'ko' && home.nav === '天梯', `首頁預設繁中（${home.lang} ${home.nav}）`);
     check(!home.hangul, '首頁沒有韓文（FAQ 改顯示英文那份）');
     await page.click('.lang button[data-lang="en"]');
     await page.waitForTimeout(1000);
     const en = await look();
-    check(en.lang === 'en' && en.nav === 'Leaderboards', `按 EN 顯示英文原文（${en.nav}）`);
+    check(en.lang === 'en' && en.nav === 'Ladder', `按 EN 顯示英文原文（${en.nav}）`);
     await page.click('.lang button[data-lang="ko"]');
     await page.waitForTimeout(1000);
-    check((await look()).nav === '排行榜', '按繁中切回中文');
+    check((await look()).nav === '天梯', '按繁中切回中文');
 
     // setup 頁：網站層翻譯和遊戲的 DOM 翻譯器不能互相改寫（曾經卡死整個分頁）
     await page.goto('https://d2survivors.lol/play/setup.html').catch(() => {});
@@ -202,7 +202,7 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
       new Promise((res) => setTimeout(() => res(null), 15000)),
     ]);
     check(busy && busy.n < 50, `setup 頁沒卡死（1 秒內 DOM 變動 ${busy?.n ?? '逾時'} 次）`);
-    check(busy?.nav === '排行榜', `setup 頁選單繁中（${busy?.nav}）`);
+    check(busy?.nav === '天梯', `setup 頁選單繁中（${busy?.nav}）`);
     await ctx.close();
   }
   // 3
