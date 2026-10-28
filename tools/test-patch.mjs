@@ -44,6 +44,14 @@ if (tr) {
   eq(T.translate('Totally Unknown Thing'), 'Totally Unknown Thing');
   eq(globalThis.__d2zhMissing.has('Totally Unknown Thing'), true); // 漏翻紀錄
   eq(globalThis.__d2zhMissing.has('Character (C)'), false);
+  // 模板同時有 * 和 #：# 只比對數字（寶箱獎勵「Fire Mastery level 3」曾整句英文）
+  const T2 = new Translator([{ Bash: '猛擊', '* level #': '{0} 等級 {1}', 'affix:Sturdy': '堅實', 'affix:of Thorns': '棘刺之', Belt: '腰帶', 'Light': '光明' }]);
+  eq(T2.translate('Bash level 6'), '猛擊 等級 6');
+  eq(T2.translate('Bash level up'), 'Bash level up'); // # 不吃非數字
+  // 魔法物品名只走 translate 時也要拆成前綴／底材／後綴（遊戲的 translateMagic）
+  eq(T2.translate('Sturdy Belt of Thorns'), '棘刺之 堅實 腰帶');
+  eq(T2.translate('Belt of Thorns'), '棘刺之 腰帶');
+  eq(T2.translate('Out of the Light'), 'Out of the Light'); // 不是物品名：後綴不在 affix 裡
   console.log(`translate patch ok（${tr}）`);
 }
 

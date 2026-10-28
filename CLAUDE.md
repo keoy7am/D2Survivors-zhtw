@@ -9,7 +9,7 @@
   1. `rules.json`（靜態）：`ko-*.js`（不綁檔名）→ `extension/zh-TW.js`。新版遊戲的新字串不在字典裡，引擎自己顯示原文。
   2. `background.js` **執行期**補丁（`extension/patch-ui.js` 的 `PATCHERS`）：看到遊戲載入哪個 `ui-<hash>.js`／`translate-<hash>.js`，就抓那一版原檔打補丁，存進 `chrome.storage.local` 的 `patches`。改版後自動重打。
      - ui：CJK 也走 `fillText`、中文字之間可斷行、字型後備加系統繁中字型、相對 import 改絕對網址。打不上＝disabled。
-     - translate（遊戲翻譯器，所有遊戲文字都經過它）：最外層查不到時試「名稱 (快捷鍵)」拆開（迷你面板提示 `Character (C)`）、「A. B」分段（地區標題）；韓文日期轉中文；仍查不到的字串記在頁面 `globalThis.__d2zhMissing`，popup「匯出漏翻清單」會帶上。打不上只略過，不影響翻譯。**補強只放在最外層**：深層遞迴是原引擎在試模板，提早給半套結果會搶掉更好的拆法（曾讓地區標題變成「第 I: … 章」）。
+     - translate（遊戲翻譯器，所有遊戲文字都經過它）：最外層查不到時試「名稱 (快捷鍵)」拆開（迷你面板提示 `Character (C)`）、「A. B」分段（地區標題）；韓文日期轉中文；**模板同時有 `*` 和 `#` 時原引擎把 `#` 當字面井字號**，補丁在第一次查詢時把這種模板的 `#` 改成數字群組（`i18n/extra.json` 的「`* level #`」寶箱獎勵就靠它）；魔法物品名「[前綴] 底材 [of 後綴]」只走 translate 時（某些畫面沒呼叫 translateMagic），前後綴都在 `affix:`、底材翻得到才交給 translateMagic；仍查不到的字串記在頁面 `globalThis.__d2zhMissing`，popup「匯出漏翻清單」會帶上。打不上只略過，不影響翻譯。**補強只放在最外層**：深層遞迴是原引擎在試模板，提早給半套結果會搶掉更好的拆法（曾讓地區標題變成「第 I: … 章」）。
   3. `content.js`（isolated world）：把背景狀態與補丁碼同步到頁面 localStorage（`d2zh:off`、`d2zh:mods`），不同時重新整理遊戲頁一次；轉接 popup 的漏翻查詢給 main-world。網站層文字（選單、首頁、排行榜）照**韓文原文**換成繁中：`site-dict.js` 的 `D2ZH_SITE_KO` 由 build 從網站腳本的 `{en:{…},ko:{…}}` 配對產生（`i18n/site.json` 以英文原文為 key——不同物件有同名 key 代表不同句子，不能用 key 對照）。整句 → 模板（`{0}`）→ 長句子片段 → 句中模板 → 短片段。換過的元素標 `data-no-translate`，否則和遊戲自己的 DOM 翻譯器互相改寫，**整個分頁卡死**（曾發生）。`site.css`：繁中模式顯示英文版 FAQ 段落、繁中字型排在韓文字型前。
   4. `main-world.js`（MAIN world、document_start）：網站的 EN／繁中（原「한국어」）按鈕就是語言開關（`d2s:lang` en／ko），**不替使用者改選擇**；只有第一次安裝預設繁中、遊戲頁沒補丁碼時暫時退回 en（`d2zh:pendingKo`，補丁碼到了由 content.js 還原）。繁中時插 import map 把 `ui-<hash>.js` 對應到補丁版的 `blob:` 網址。
   5. `update.js`＋popup：新版偵測（打開遊戲／瀏覽器啟動時，12 小時內最多查一次 GitHub `releases/latest`，存 storage `update`；有新版 badge 藍色 `NEW`，優先序低於紅色 `!` 與 off）；popup「回報翻譯問題」開 `.github/ISSUE_TEMPLATE/translation.yml` 並以 query 預填欄位 id `ext-version`、`game-version`——**改範本欄位 id 要同步改 popup.js**。
@@ -45,6 +45,11 @@
 語境誤譯審查（例：Report 譯成「舉報」）：`node tools/ui-candidates.mjs <官方字串表目錄> i18n/review` 篩出短介面字串（排除官方譯名與稀有物品名，附韓文版當語境），逐批找問題＋對抗驗證，採用的修正寫成 JSON 用 `node tools/apply-fixes.mjs <檔>` 套用（逐條機械檢查）。**驗證者的「統一術語」主張要對照官方字串表**：曾有 Aura→光環、Stamina→耐力 被驗證通過，但官方是靈氣、精力，方向相反。
 
 官方用語對照：`node tools/audit-official.mjs <官方字串表目錄>` 列出「和 D2R 官方同一句英文（%d→# 模板）但譯文不同」的條目；單字型差異多半是語境不同（Gold＝金幣而非詞綴「黃金」），句子型（物品詞條）照官方改，例外見 STYLE.md 的「刻意偏離官方」。
+
+遊戲執行中的漏翻（字典沒有整句、執行中才組出來的字串，例如寶箱獎勵「Fire Mastery level 3」、協同加成「… per level of A, B and C」、魔法物品名）：
+- `node tools/soak.cjs [秒數] [速度] [輸出.json]`：用遊戲的開發參數 `?god&speed=N` 在測試瀏覽器裡長時間推進（不碰真實存檔／排行榜），結束時列出 `__d2zhMissing`。改版後跑一次 `300 20`，只剩 DISCORD 才算乾淨。
+- `node tools/composed-check.mjs`（在 `npm test` 裡）：把技能名代入已知的組合句型，用遊戲翻譯器＋字典翻，句型翻不出就失敗。找到新句型時加到它的清單，譯法放 `i18n/extra.json`。
+- 加寬鬆模板前先做全字典回歸（每個 key 代入值、比較加入前後的譯文），曾有 `* level *` 讓「… per level of …」變成半中半英。
 
 網站頁殘留掃描：`node tools/scan-site.cjs [截圖目錄]` 逐一點排行榜分頁、展開紀錄、進玩家頁，列出畫面上的韓文與沒翻的英文（玩家名稱、品牌名會混進來）。**排行榜頁也載入遊戲的翻譯器與 ui**，所以 import map 在所有頁面都要插，不只 `/play/`（曾因此日期顯示韓文）。
 

@@ -1,4 +1,13 @@
 {
  "Close Mini Panel": "關閉迷你面板",
- "Mini Panel": "迷你面板"
+ "Mini Panel": "迷你面板",
+ "* level #": "{0} 等級 {1}",
+ "* replaces *": "{0}（取代{1}）",
+ "* evolve * into *": "{0}（將{1}進化為{2}）",
+ "+# to * # of #": "{1} +{0}（{2}/{3}）",
+ "* everything is maxed": "{0}（全部已滿級）",
+ "+*% damage per level of *, * and *": "{1}、{2}和{3} 每等級傷害 +{0}%",
+ "+*% damage per level of * and *": "{1}和{2} 每等級傷害 +{0}%",
+ "+*% per level of *, * and *": "{1}、{2}和{3} 每等級 +{0}%",
+ "+*% per level of * and *": "{1}和{2} 每等級 +{0}%"
 }

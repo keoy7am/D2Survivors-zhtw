@@ -47,13 +47,28 @@ export function patchUi(src, fileName) {
 // - 遊戲用 Intl 以韓文格式化的日期（10월 26일）轉成中文（10月26日）
 // - 仍查不到的英文字串記在 globalThis.__d2zhMissing，popup 的「匯出漏翻清單」會帶上
 // 只在最外層（r===0）補強：深層遞迴是原引擎在試模板（如「Act *」），太早給出半套結果會搶掉更好的拆法
+// - 模板同時有 * 和 # 時（「* level #」寶箱獎勵這類組合句），原引擎把 # 當字面的井字號，永遠比對不到；
+//   第一次查詢時把這些模板的 # 改成「數字」群組（依出現順序，{0}{1} 照舊），比對線索也去掉 #
 export const TRANSLATE_HELPERS = (C) => `
 ;(()=>{const P=${C}.prototype,L=P.lookup,T=P.translate,M=globalThis.__d2zhMissing??=new Set();
 const latin=s=>(s.match(/[A-Za-z]{3,}/g)||[]).join('').length;
-P.lookup=function(t,r){const x=L.call(this,t,r);if(x!==null||r!==0)return x;
+const NUM=/([+-]?\\d[\\d,.]*)/.source;
+const mixed=w=>{const s=w.pattern.source;if(!s.includes('#'))return;w.pattern=new RegExp(s.split('#').join(NUM),w.pattern.flags);
+w.clue=w.clue.split('#').map(p=>p.trim()).reduce((a,b)=>b.length>a.length?b:a,'')};
+P.lookup=function(t,r){if(!this.__d2zhMixed){this.__d2zhMixed=true;for(const w of this.wilds)mixed(w)}
+const x=L.call(this,t,r);if(x!==null||r!==0)return x;
 const m=/^(.+?)(\\s*\\([^()]{1,12}\\))$/s.exec(t);if(m){const y=this.find(m[1],1);if(y!==null)return y+m[2]}
 return null};
+const up=s=>s.replace(/\\s+/g,' ').trim().toUpperCase();
+// 魔法物品名「[前綴] 底材 [of 後綴]」：有些畫面只呼叫 translate、沒走遊戲的 translateMagic，整句會查不到。
+// 前後綴都要是字典裡的 affix:、中間的底材要翻得到，才交給 translateMagic（一般句子不會被誤認成物品名）
+const magic=function(e){const w=e.trim().split(/\\s+/);if(w.length<2||w.length>7)return null;
+const of=w.findIndex((x,i)=>i>0&&x==='of'),pre=this.exact.has(up('affix:'+w[0]))?1:0,end=of>0?of:w.length;
+if(of>0&&!this.exact.has(up('affix:'+w.slice(of).join(' '))))return null;if(!pre&&of<0)return null;
+const base=w.slice(pre,end).join(' ');if(!base||!this.exact.has(up(base))&&!this.exact.has(up('item:'+base)))return null;
+const x=this.translateMagic(e,base);return/[\\u3400-\\u9fff]/.test(x)?x:null};
 P.translate=function(e){let r=T.call(this,e);if(typeof r!=='string')return r;
+if(r===e){const x=magic.call(this,e);if(x!==null)r=x}
 if(e.includes('. ')&&latin(r)>0){const c=e.split('. ').map(p=>T.call(this,p)).join(' · ');if(latin(c)<latin(r))r=c}
 if(!/[\\u3400-\\u9fff]/.test(e)&&M.size<5000&&(r===e&&/[A-Za-z]{3}/.test(e)||/[A-Za-z]{3,}\\s+[A-Za-z]{3,}\\s+[A-Za-z]{3,}/.test(r)))M.add(e.trim());
 if(/\\d\\s*[년월일]/.test(r))r=r.replace(/(\\d+)년\\s*/g,'$1年').replace(/(\\d+)월\\s*/g,'$1月').replace(/(\\d+)일/g,'$1日');
