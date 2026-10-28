@@ -1,7 +1,6 @@
 // 遊戲改版偵測（不用瀏覽器、不用 Claude）：從 /play/ 的 HTML 沿著模組引用找出目前的
 // ui-*.js、translate-*.js、ko-*.js 檔名，和 extension/meta.json（上次建置對應的版本）比對。
-// 用法：node tools/watch.mjs   結束碼 0＝沒變、10＝遊戲改版了、1＝偵測失敗（網路、結構變了）
-// 由 scripts/auto-update.ps1（Windows 工作排程器）定時呼叫；有變化才啟動 Claude 跑 /game-update。
+// 用法：node tools/watch.mjs   結束碼 0＝沒變、10＝遊戲改版了（該跑 /game-update）、1＝偵測失敗（網路、結構變了）
 import fs from 'node:fs';
 import path from 'node:path';
 
