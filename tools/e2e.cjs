@@ -56,6 +56,19 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
     await sw.evaluate((c) => chrome.storage.local.set({ cov: { ...c, covered: c.covered - 152, builtAt: 'old-build' } }), st.cov);
     await sw.evaluate(async () => { const { update } = await chrome.storage.local.get('update'); await chrome.storage.local.set({ update: { ...update, poke: Date.now() } }); });
     check(await waitFor(async () => (await state(sw)).cov?.covered === st.cov.covered), `擴充換字典後重算覆蓋率（${(await state(sw)).cov?.covered}/${st.cov.total}）`);
+    // 同一個遊戲版本、但補丁是舊版擴充打的：更新擴充後要重打（不然新版補丁的修正不會生效）
+    await sw.evaluate(async () => {
+      const { patches } = await chrome.storage.local.get('patches');
+      for (const p of Object.values(patches)) Object.assign(p, { builtAt: 'old-build', code: '/* old */' });
+      await chrome.storage.local.set({ patches });
+      const { update } = await chrome.storage.local.get('update');
+      await chrome.storage.local.set({ update: { ...update, poke: Date.now() } });
+    });
+    check(await waitFor(async () => Object.values((await state(sw)).patches ?? {}).every((p) => p.code !== '/* old */' && p.builtAt !== 'old-build')), '擴充更新後重打補丁（同一個遊戲版本）');
+    // 補丁碼一換，content.js 會自己重新整理遊戲頁（不要再手動 reload，會互撞）；等它載完
+    await page.waitForTimeout(1500);
+    await settle(page);
+    check(await patched(page), '重打的補丁在遊戲頁生效');
 
     // 效能模式：遊戲的畫質參數要在 itemArt 讀網址前加上（畫布解析度變 0.75 倍），畫布出現後網址要還原
     const ratio = () => page.evaluate(() => { const c = document.querySelector('#stage canvas'); return c ? +(c.width / c.clientWidth).toFixed(2) : null; });

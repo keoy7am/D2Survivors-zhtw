@@ -42,9 +42,10 @@ async function refreshNow() {
   for (const prefix of PREFIXES) {
     // 還沒看過遊戲載入哪一版時（剛安裝），先對建置時的版本預打
     const name = seen[prefix] ?? m.files[prefix];
-    if (patches[prefix]?.name === name) continue;
+    // 遊戲換版、或擴充本身更新（補丁程式可能改了）都要重打；只看檔名的話，更新擴充後會一直用舊版打的補丁
+    if (patches[prefix]?.name === name && patches[prefix]?.builtAt === m.builtAt) continue;
     try {
-      patches[prefix] = { name, code: PATCHERS[prefix](await fetchText(ORIGIN + name), name) };
+      patches[prefix] = { name, builtAt: m.builtAt, code: PATCHERS[prefix](await fetchText(ORIGIN + name), name) };
     } catch (e) {
       console.warn(`${name} 補丁失敗`, e);
       delete patches[prefix];
