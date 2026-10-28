@@ -11,5 +11,7 @@
  "+*% damage per level of *, * and *": "{1}、{2}和{3} 每等級傷害 +{0}%",
  "+*% damage per level of * and *": "{1}和{2} 每等級傷害 +{0}%",
  "+*% per level of *, * and *": "{1}、{2}和{3} 每等級 +{0}%",
- "+*% per level of * and *": "{1}和{2} 每等級 +{0}%"
+ "+*% per level of * and *": "{1}和{2} 每等級 +{0}%",
+ "+#% critical strike chance": "+{0}% 致命攻勢機率",
+ "+#% spell damage": "+{0}% 法術傷害"
 }

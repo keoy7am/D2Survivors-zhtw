@@ -47,5 +47,13 @@ for (const s of fixed) {
   console.log(`${latin(out) ? '✗' : '✓'}「${s}」→「${out}」`);
   if (latin(out)) bad++;
 }
+// 升級商店超過最高階的效果：keepSave 把升級的 endless 文字裡的數字乘上倍率（常有小數）、以換行拆開逐行翻
+const endless = [...ks.matchAll(/endless:`([^`]*)`/g), ...ks.matchAll(/\(`(?:strength|dexterity|vitality|energy)`,`[^`]*`,`([^`]*)`\)/g)]
+  .map((m) => m[1].replace(/\\n/g, '\n').replace(/\$\{[^}]*\}/g, '4'));
+const shopMiss = new Set();
+for (const e of endless) for (const k of [0.2, 0.01, 12.34]) for (const line of e.replace(/\d+(\.\d+)?/g, (t) => String(+(t * k).toFixed(2))).split('\n'))
+  if (latin(T.translate(line))) shopMiss.add(line.replace(/\d+(\.\d+)?/g, '#'));
+console.log(`${shopMiss.size ? '✗' : '✓'} 升級商店超過最高階的效果 ${endless.length} 條${shopMiss.size ? `：${[...shopMiss].join('、')}` : ''}`);
+if (!endless.length || shopMiss.size) bad++;
 console.log(`名稱 ${names.length} 個；${bad ? `${bad} 種句型有缺` : '全部翻得到'}`);
 process.exitCode = bad ? 1 : 0;
