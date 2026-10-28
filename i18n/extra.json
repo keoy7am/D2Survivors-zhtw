@@ -13,5 +13,7 @@
  "+*% per level of *, * and *": "{1}、{2}和{3} 每等級 +{0}%",
  "+*% per level of * and *": "{1}和{2} 每等級 +{0}%",
  "+#% critical strike chance": "+{0}% 致命攻勢機率",
- "+#% spell damage": "+{0}% 法術傷害"
+ "+#% spell damage": "+{0}% 法術傷害",
+ "* evolved into *!.": "{0} 進化成 {1}！",
+ "* evolved into *!,": "{0} 進化成 {1}！,"
 }

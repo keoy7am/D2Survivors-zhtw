@@ -26,6 +26,9 @@ const shapes = [
   (n) => `${n} evolve ${names[2].toLowerCase()} into ${n.toLowerCase()}`,
   (n) => `+1 to ${n} 2 of 3`,
   (n) => `${n} evolved into ${names[3]}!`,
+  // 寶箱摘要（screens 的「From the chests: 」逐項接 `, `、最後一項接 `.`；引擎一次剝掉 `!.` 兩個標點）
+  (n) => `${n} evolved into ${names[3]}!.`,
+  (n) => `${n} evolved into ${names[3]}!, `,
   (n) => `Level 3 ${n}`,
   // 局內技能列表（`${名稱} ${等級}${ (+加成)}${ - ready to evolve}`；進化後的技能沒有等級）
   (n) => `${n} 8 (+2) - ready to evolve`,

@@ -275,5 +275,7 @@
  "No clear to open yet.": "尚無可開啟的通關紀錄。",
  "Wiki": "維基",
  "Play": "遊玩",
- "Menu": "選單"
+ "Menu": "選單",
+ "Find a player by name": "依名稱搜尋玩家",
+ "No player named like “{0}”.": "找不到名稱像「{0}」的玩家。"
 }
