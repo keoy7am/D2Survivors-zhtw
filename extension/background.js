@@ -60,10 +60,11 @@ async function refreshNow() {
   await chrome.storage.local.set({ disabled });
   let cov = s.cov;
   const koName = seen['ko-'] ?? m.files['ko-'];
-  if (cov?.koName !== koName) {
+  // 遊戲字典換版，或擴充本身換了譯文（更新擴充、遊戲沒改版）都要重算；只看 koName 的話會一直顯示舊版擴充算的數字
+  if (cov?.koName !== koName || cov?.builtAt !== m.builtAt) {
     try {
       const { missing, ...c } = await coverage(koName);
-      cov = c;
+      cov = { ...c, builtAt: m.builtAt };
       await chrome.storage.local.set({ cov });
     } catch (e) {
       console.warn('覆蓋率計算失敗', e);

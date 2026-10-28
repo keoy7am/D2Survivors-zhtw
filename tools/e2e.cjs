@@ -52,6 +52,10 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
     const st = await state(sw);
     check(st.disabled === false && st.patches?.['ui-']?.name === st.seen?.['ui-'], `補丁對上遊戲版本（${st.patches?.['ui-']?.name}）`);
     check(st.cov?.total > 10000, `覆蓋率已計算（${st.cov?.covered}/${st.cov?.total}）`);
+    // 更新擴充、遊戲沒改版：舊版擴充算的覆蓋率（同一個遊戲字典）要重算（曾一直顯示舊版的 98.8%）
+    await sw.evaluate((c) => chrome.storage.local.set({ cov: { ...c, covered: c.covered - 152, builtAt: 'old-build' } }), st.cov);
+    await sw.evaluate(async () => { const { update } = await chrome.storage.local.get('update'); await chrome.storage.local.set({ update: { ...update, poke: Date.now() } }); });
+    check(await waitFor(async () => (await state(sw)).cov?.covered === st.cov.covered), `擴充換字典後重算覆蓋率（${(await state(sw)).cov?.covered}/${st.cov.total}）`);
 
     // 效能模式：遊戲的畫質參數要在 itemArt 讀網址前加上（畫布解析度變 0.75 倍），畫布出現後網址要還原
     const ratio = () => page.evaluate(() => { const c = document.querySelector('#stage canvas'); return c ? +(c.width / c.clientWidth).toFixed(2) : null; });
