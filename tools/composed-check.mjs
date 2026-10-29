@@ -58,5 +58,11 @@ for (const e of endless) for (const k of [0.2, 0.01, 12.34]) for (const line of 
   if (latin(T.translate(line))) shopMiss.add(line.replace(/\d+(\.\d+)?/g, '#'));
 console.log(`${shopMiss.size ? '✗' : '✓'} 升級商店超過最高階的效果 ${endless.length} 條${shopMiss.size ? `：${[...shopMiss].join('、')}` : ''}`);
 if (!endless.length || shopMiss.size) bad++;
+// 符文之語：itemArt 的 V(`名稱`,[符文…],[類型…]) → 物品名稱與「'符文串'」（遊戲顯示在物品說明第二行）
+const art = fs.readFileSync(path.join(game, file(/^itemArt-.*\.js$/)), 'utf8');
+const rw = [...art.matchAll(/[\w$]+\(`([^`]+)`,\[((?:`\w+`,?)+)\],\[(?:`\w+`,?)+\]\)/g)];
+const rwMiss = rw.flatMap((m) => [T.translateAs('item', m[1]), T.translate(`'${m[2].replace(/[`,]/g, '')}'`)]).filter(latin);
+console.log(`${rwMiss.length ? '✗' : '✓'} 符文之語 ${rw.length} 個的名稱與符文串${rwMiss.length ? `：${rwMiss.slice(0, 5).join('、')}` : ''}`);
+if (rw.length < 50 || rwMiss.length) bad++;
 console.log(`名稱 ${names.length} 個；${bad ? `${bad} 種句型有缺` : '全部翻得到'}`);
 process.exitCode = bad ? 1 : 0;

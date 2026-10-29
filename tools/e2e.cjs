@@ -203,6 +203,21 @@ const patched = (page) => page.evaluate(() => globalThis.__d2zhPatched === true)
     ]);
     check(busy && busy.n < 50, `setup 頁沒卡死（1 秒內 DOM 變動 ${busy?.n ?? '逾時'} 次）`);
     check(busy?.nav === '天梯', `setup 頁選單繁中（${busy?.nav}）`);
+
+    // 更新擴充不會重新載入已開的頁面（舊字典）：popup 用 ping 認出這種頁面，提醒重新整理
+    const ping = async () => {
+      const p = await ctx.newPage();
+      await p.goto(sw.url().replace(/[^/]+$/, 'popup.html'));
+      const r = await p.evaluate(async () => {
+        const [t] = await chrome.tabs.query({ url: 'https://d2survivors.lol/*' });
+        try { return await chrome.tabs.sendMessage(t.id, 'ping'); } catch { return null; }
+      });
+      await p.close().catch(() => {});
+      return r;
+    };
+    const version = JSON.parse(fs.readFileSync(path.join(EXT, 'manifest.json'))).version;
+    // 舊頁面（擴充更新前開的）沒有接收端、ping 會丟錯：Playwright 裡 chrome.runtime.reload() 後擴充起不來，這半邊只能實機驗
+    check(await ping() === version, '目前的頁面回應 ping（擴充版本），popup 不誤報要重新整理');
     await ctx.close();
   }
   // 3

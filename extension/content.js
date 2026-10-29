@@ -43,6 +43,8 @@ const RELAY = {
   perfStatus: { ask: 'perfAsk', answer: 'perfReply', pick: (d) => d, timeout: 3000, fallback: null },
 };
 chrome.runtime.onMessage.addListener((msg, _, reply) => {
+  // popup 確認這個分頁跑的是目前版本的擴充：更新擴充不會重新載入已開的分頁，舊頁面沒有接收端、字典也還是舊的
+  if (msg === 'ping') { reply(chrome.runtime.getManifest().version); return; }
   const r = RELAY[msg];
   if (!r) return;
   const id = Math.random().toString(36).slice(2);

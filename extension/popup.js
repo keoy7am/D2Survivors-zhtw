@@ -21,6 +21,10 @@ const info = { 'ext-version': chrome.runtime.getManifest().version };
   } else {
     $('state').textContent = s.off ? '已停用' : '翻譯運作中';
     $('state').title = '沒翻到的字串顯示原文';
+    if (!s.off && await stalePage()) {
+      $('state').className = 'warn';
+      $('state').textContent = '這個遊戲頁是擴充更新前開的，還在用舊的翻譯：請重新整理（F5）';
+    }
   }
   if (s.cov) {
     $('cov').textContent = `覆蓋率 ${((s.cov.covered / s.cov.total) * 100).toFixed(1)}%`;
@@ -33,6 +37,13 @@ const info = { 'ext-version': chrome.runtime.getManifest().version };
   $('ver').textContent = `遊戲版本 ${seen['ui-'] ?? '（尚未開過遊戲）'}；譯文建置於 ${meta.builtAt.slice(0, 10)}${changed ? '，之後遊戲有改版，新字串會顯示原文' : ''}`;
 })();
 
+// 更新擴充不會重新載入已開的遊戲頁：那頁還是舊字典，content.js 也失聯（問不到或版本不同）
+async function stalePage() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!/^https:\/\/d2survivors\.lol\//.test(tab?.url ?? '') || tab.status !== 'complete') return false;
+  try { return (await chrome.tabs.sendMessage(tab.id, 'ping')) !== info['ext-version']; } catch { return true; }
+}
+
 // 有新版時在最上方顯示下載連結（自動檢查或按「檢查更新」）
 function showUpdate(u) {
   const box = $('update');
@@ -42,7 +53,7 @@ function showUpdate(u) {
   box.append(`有新版 v${u.latest}（目前 v${info['ext-version']}）：`, Object.assign(document.createElement('a'), {
     href: '#', textContent: '下載',
     onclick: (e) => { e.preventDefault(); chrome.tabs.create({ url: u.url || RELEASES }); },
-  }), '，解壓覆蓋舊資料夾後到 chrome://extensions 按重新載入。');
+  }), '，解壓覆蓋舊資料夾後到 chrome://extensions 按重新載入，再重新整理遊戲頁。');
   return true;
 }
 $('check-update').addEventListener('click', async () => {
