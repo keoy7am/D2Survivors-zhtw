@@ -36,7 +36,7 @@ if (manifest.version !== version) {
   manifest.version = version;
   fs.writeFileSync(mf, JSON.stringify(manifest, null, 2) + '\n');
   sh('git', ['add', mf]);
-  sh('git', ['commit', '-q', '-m', `Release ${tag}`]);
+  sh('git', ['commit', '-q', '-m', `chore(release): 發佈 ${tag}`]);
 }
 const zip = sh(process.execPath, [path.join(root, 'tools', 'pack.mjs')]).split('\n').pop();
 sh('git', ['tag', '-a', tag, '-m', tag]);

@@ -62,4 +62,4 @@
 
 ## 慣例
 - 用 `npm run …`，不用全域 playwright。測試腳本會開 headless Chromium 連正式站。
-- commit 訊息寫做了什麼和為什麼，不寫工作過程。
+- commit 訊息：Conventional Commits、繁體中文（例 `fix(i18n): 補上符文之語的名稱翻譯`），寫做了什麼和為什麼，不寫工作過程。`.claude/commit-style.json`（本機）讓 hook 擋不合格的主題。臨時腳本放 `tmp/`（gitignored），`tools/` 只放長期工具。
