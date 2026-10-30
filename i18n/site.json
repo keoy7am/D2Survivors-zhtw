@@ -277,5 +277,7 @@
  "Play": "遊玩",
  "Menu": "選單",
  "Find a player by name": "依名稱搜尋玩家",
- "No player named like “{0}”.": "找不到名稱像「{0}」的玩家。"
+ "No player named like “{0}”.": "找不到名稱像「{0}」的玩家。",
+ "Charsi's Magic Find": "恰西的魔法物品尋獲率",
+ "Charsi's Gold Find": "恰西的金幣尋獲率"
 }
