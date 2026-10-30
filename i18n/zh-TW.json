@@ -434,6 +434,7 @@
  "A Hardcore hero is no longer unranked as played offline when the leaderboard server was too busy to answer": "專家級英雄不再因排行榜伺服器太忙碌而無法回應，就被視為離線遊玩而不列入排名",
  "A Hardcore hero who died stays dead on the leaderboard, and a copy of her save played later never ranks": "死亡的專家級英雄在排行榜上永遠是死亡狀態，之後遊玩她存檔的複製品也不會列入排名",
  "A Hardcore hero who plays now won't be ranked again": "現在遊玩的專家級英雄將不會再列入排名",
+ "A Hardcore run's start that can't reach the leaderboard is sent again once it can, and no longer leaves the hero unranked": "專家級對局的開始若無法送達排行榜，會在能連上時重新送出，不再讓英雄不列入排名",
  "A Horadric Codex gives one more": "赫拉迪姆寶典可再多提供一個",
  "A Hydra rises as D2's three heads, each spitting its fire bolts in turn, where it was one: a cast deals the same damage": "多頭蛇改為如 D2 般升起三個頭，輪流噴出火焰彈，原本只有一個頭：每次施放傷害不變",
  "A Hydra's heads rise out of the ground as D2's do, where they faded in": "多頭蛇的頭如同 D2 般從地面升起，而不是淡入",
