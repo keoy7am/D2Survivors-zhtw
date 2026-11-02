@@ -15,11 +15,13 @@ const { t: Translator } = await import('data:text/javascript;base64,' + Buffer.f
 const zh = (await import('data:text/javascript;base64,' + fs.readFileSync(path.join(root, 'extension', 'zh-TW.js')).toString('base64'))).default;
 const T = new Translator([zh]);
 
-// 技能、被動、技能樹分頁名稱：keepSave 的資料表裡 name:`…`（含物品等其他名稱也無妨，只用來代入句型）
-const ks = fs.readFileSync(path.join(game, file(/^keepSave-.*\.js$/)), 'utf8');
+// 技能、被動、技能樹分頁名稱與升級商店：遊戲 chunk 裡的 name:`…`、endless:`…`。chunk 會隨改版拆併改名，所以全掃；
+// 字典（ko-）與物品圖鑑（itemArt-，物品名走 translateAs('item')）不算
+const ks = fs.readdirSync(game).filter((n) => /\.js$/.test(n) && !/^(ko|itemArt)-/.test(n))
+  .map((n) => fs.readFileSync(path.join(game, n), 'utf8')).join('\n');
 const names = [...new Set([...ks.matchAll(/name:`([A-Z][A-Za-z' -]{2,40})`/g)].map((m) => m[1]))].filter((n) => zh[n] !== undefined);
 
-// 句型：寶箱獎勵（keepSave 的 `${d.title} ${f}`，f＝`level N` 或小寫的副標題）與其他已知的組合句
+// 句型：寶箱獎勵（saveTransfer 的 `${d.title} ${f}`，f＝`level N` 或小寫的副標題）與其他已知的組合句
 const shapes = [
   (n) => `${n} level 3`,
   (n) => `${n} replaces ${names[1].toLowerCase()}`,
@@ -50,7 +52,7 @@ for (const s of fixed) {
   console.log(`${latin(out) ? '✗' : '✓'}「${s}」→「${out}」`);
   if (latin(out)) bad++;
 }
-// 升級商店超過最高階的效果：keepSave 把升級的 endless 文字裡的數字乘上倍率（常有小數）、以換行拆開逐行翻
+// 升級商店超過最高階的效果：遊戲把升級的 endless 文字裡的數字乘上倍率（常有小數）、以換行拆開逐行翻
 const endless = [...ks.matchAll(/endless:`([^`]*)`/g), ...ks.matchAll(/\(`(?:strength|dexterity|vitality|energy)`,`[^`]*`,`([^`]*)`\)/g)]
   .map((m) => m[1].replace(/\\n/g, '\n').replace(/\$\{[^}]*\}/g, '4'));
 const shopMiss = new Set();
