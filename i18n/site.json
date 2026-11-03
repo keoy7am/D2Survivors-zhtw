@@ -279,5 +279,6 @@
  "Find a player by name": "依名稱搜尋玩家",
  "No player named like “{0}”.": "找不到名稱像「{0}」的玩家。",
  "Charsi's Magic Find": "恰西的魔法物品尋獲率",
- "Charsi's Gold Find": "恰西的金幣尋獲率"
+ "Charsi's Gold Find": "恰西的金幣尋獲率",
+ "The leaderboard didn't see enough of this run as it was played.": "排行榜在這一局進行時看到的部分不足。"
 }
