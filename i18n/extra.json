@@ -15,5 +15,7 @@
  "+#% critical strike chance": "+{0}% 致命攻勢機率",
  "+#% spell damage": "+{0}% 法術傷害",
  "* evolved into *!.": "{0} 進化成 {1}！",
- "* evolved into *!,": "{0} 進化成 {1}！,"
+ "* evolved into *!,": "{0} 進化成 {1}！,",
+ "Level # Lower Resist": "等級 {0} 降低抗性",
+ "Level # Summon Resist": "等級 {0} 召喚物抗性"
 }
